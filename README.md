@@ -18,4 +18,4 @@ var client = new Client("localhost:50051");
 
 ## License
 
-Apache 2.0
+BSD-3-Clause
