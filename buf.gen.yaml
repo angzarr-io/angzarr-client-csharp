@@ -1,0 +1,8 @@
+version: v2
+inputs:
+  - module: buf.build/angzarr/angzarr
+plugins:
+  - remote: buf.build/protocolbuffers/csharp
+    out: proto
+  - remote: buf.build/grpc/csharp
+    out: proto
