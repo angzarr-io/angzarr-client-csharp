@@ -8,6 +8,15 @@ namespace Angzarr.Client;
 /// </summary>
 public static class Helpers
 {
+    // Constants matching Rust proto_ext::constants
+    public const string UnknownDomain = "unknown";
+    public const string WildcardDomain = "*";
+    public const string DefaultEdition = "angzarr";
+    public const string MetaAngzarrDomain = "_angzarr";
+    public const string ProjectionDomainPrefix = "_projection";
+    public const string CorrelationIdHeader = "x-correlation-id";
+    public const string TypeUrlPrefix = "type.googleapis.com/";
+
     /// <summary>
     /// Convert a System.Guid to an Angzarr UUID proto.
     /// </summary>
@@ -77,13 +86,15 @@ public static class Helpers
 
     /// <summary>
     /// Calculate the next sequence number from an EventBook.
-    /// Uses the framework-computed next_sequence field.
+    /// Uses the framework-precomputed next_sequence field rather than counting
+    /// pages, because snapshots may cause the EventBook to contain only
+    /// post-snapshot events — counting pages would give the wrong sequence.
     /// </summary>
     public static uint NextSequence(Angzarr.EventBook? book)
     {
         if (book == null)
-            return 1;
-        return book.NextSequence > 0 ? book.NextSequence : 1;
+            return 0;
+        return book.NextSequence;
     }
 
     /// <summary>
@@ -140,8 +151,6 @@ public static class Helpers
         var idx = typeUrl.LastIndexOf('/');
         return idx >= 0 ? typeUrl[(idx + 1)..] : typeUrl;
     }
-
-    private const string TypeUrlPrefix = "type.googleapis.com/";
 
     /// <summary>
     /// Check if a type URL matches the given fully qualified type name.
