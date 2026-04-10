@@ -14,9 +14,9 @@
 
     <ItemGroup>
         <Protobuf
-            Include="../angzarr/proto/angzarr/*.proto"
+            Include="../angzarr-core/proto/angzarr/*.proto"
             GrpcServices="Both"
-            ProtoRoot="../angzarr/proto"
+            ProtoRoot="../angzarr-core/proto"
         />
     </ItemGroup>
 </Project>
