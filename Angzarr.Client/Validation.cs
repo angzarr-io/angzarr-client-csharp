@@ -29,7 +29,7 @@ public static class Validation
     public static void RequirePositive(decimal value, string fieldName = "value")
     {
         if (value <= 0)
-            throw new CommandRejectedError($"{fieldName} must be positive");
+            throw new CommandRejectedError($"{fieldName} must be positive", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public static class Validation
     public static void RequirePositive(int value, string fieldName = "value")
     {
         if (value <= 0)
-            throw new CommandRejectedError($"{fieldName} must be positive");
+            throw new CommandRejectedError($"{fieldName} must be positive", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -47,7 +47,7 @@ public static class Validation
     public static void RequirePositive(long value, string fieldName = "value")
     {
         if (value <= 0)
-            throw new CommandRejectedError($"{fieldName} must be positive");
+            throw new CommandRejectedError($"{fieldName} must be positive", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -56,7 +56,7 @@ public static class Validation
     public static void RequireNonNegative(decimal value, string fieldName = "value")
     {
         if (value < 0)
-            throw new CommandRejectedError($"{fieldName} must be non-negative");
+            throw new CommandRejectedError($"{fieldName} must be non-negative", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public static class Validation
     public static void RequireNonNegative(int value, string fieldName = "value")
     {
         if (value < 0)
-            throw new CommandRejectedError($"{fieldName} must be non-negative");
+            throw new CommandRejectedError($"{fieldName} must be non-negative", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public static class Validation
     public static void RequireNonNegative(long value, string fieldName = "value")
     {
         if (value < 0)
-            throw new CommandRejectedError($"{fieldName} must be non-negative");
+            throw new CommandRejectedError($"{fieldName} must be non-negative", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -83,7 +83,7 @@ public static class Validation
     public static void RequireNotEmpty(string? value, string fieldName = "value")
     {
         if (string.IsNullOrEmpty(value))
-            throw new CommandRejectedError($"{fieldName} must not be empty");
+            throw new CommandRejectedError($"{fieldName} must not be empty", "INVALID_ARGUMENT");
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public static class Validation
     )
     {
         if (collection == null || !collection.Any())
-            throw new CommandRejectedError($"{fieldName} must not be empty");
+            throw new CommandRejectedError($"{fieldName} must not be empty", "INVALID_ARGUMENT");
     }
 
     /// <summary>
