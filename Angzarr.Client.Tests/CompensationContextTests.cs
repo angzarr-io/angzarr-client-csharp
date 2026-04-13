@@ -14,11 +14,28 @@ public class CompensationContextTests
     public void FromNotification_WithAllFields_ShouldExtractAllDetails()
     {
         // Given a Notification containing a RejectionNotification with all fields
+        // Source info is conveyed via rejected_command.pages[].header.angzarr_deferred
+        var command = new CommandBook();
+        command.Pages.Add(new CommandPage
+        {
+            Header = new PageHeader
+            {
+                AngzarrDeferred = new AngzarrDeferredSequence
+                {
+                    Source = new Cover { Domain = "saga-order-fulfill" },
+                    SourceSeq = 7,
+                }
+            },
+            Command = new Any
+            {
+                TypeUrl = "type.googleapis.com/order.FulfillOrder",
+                Value = ByteString.Empty,
+            },
+        });
+
         var rejectionNotification = new RejectionNotification
         {
-            IssuerName = "saga-order-fulfill",
-            IssuerType = "saga",
-            SourceEventSequence = 7,
+            RejectedCommand = command,
             RejectionReason = "out of stock",
         };
 
@@ -29,7 +46,6 @@ public class CompensationContextTests
 
         // Then the CompensationContext should have all fields set correctly
         context.IssuerName.Should().Be("saga-order-fulfill");
-        context.IssuerType.Should().Be("saga");
         context.SourceEventSequence.Should().Be(7);
         context.RejectionReason.Should().Be("out of stock");
     }
@@ -38,25 +54,29 @@ public class CompensationContextTests
     public void FromNotification_WithRejectedCommand_ShouldExtractCommandType()
     {
         // Given a Notification with a rejected command of type "ReserveStock"
+        var command = new CommandBook();
+        command.Pages.Add(new CommandPage
+        {
+            Header = new PageHeader
+            {
+                AngzarrDeferred = new AngzarrDeferredSequence
+                {
+                    Source = new Cover { Domain = "saga-test" },
+                    SourceSeq = 1,
+                }
+            },
+            Command = new Any
+            {
+                TypeUrl = "type.googleapis.com/inventory.ReserveStock",
+                Value = ByteString.Empty,
+            },
+        });
+
         var rejectionNotification = new RejectionNotification
         {
-            IssuerName = "saga-test",
-            IssuerType = "saga",
+            RejectedCommand = command,
             RejectionReason = "invalid",
         };
-
-        var command = new CommandBook();
-        command.Pages.Add(
-            new CommandPage
-            {
-                Command = new Any
-                {
-                    TypeUrl = "type.googleapis.com/inventory.ReserveStock",
-                    Value = ByteString.Empty,
-                },
-            }
-        );
-        rejectionNotification.RejectedCommand = command;
 
         var notification = CreateNotificationWith(rejectionNotification);
 
@@ -72,12 +92,23 @@ public class CompensationContextTests
     public void FromNotification_WithSourceAggregate_ShouldExtractDomain()
     {
         // Given a Notification with source_aggregate cover for domain "inventory"
+        var command = new CommandBook();
+        command.Pages.Add(new CommandPage
+        {
+            Header = new PageHeader
+            {
+                AngzarrDeferred = new AngzarrDeferredSequence
+                {
+                    Source = new Cover { Domain = "inventory" },
+                    SourceSeq = 1,
+                }
+            },
+        });
+
         var rejectionNotification = new RejectionNotification
         {
-            IssuerName = "saga-test",
-            IssuerType = "saga",
+            RejectedCommand = command,
             RejectionReason = "test",
-            SourceAggregate = new Cover { Domain = "inventory" },
         };
 
         var notification = CreateNotificationWith(rejectionNotification);
@@ -96,8 +127,6 @@ public class CompensationContextTests
         // Given a Notification without a rejected command
         var rejectionNotification = new RejectionNotification
         {
-            IssuerName = "saga-test",
-            IssuerType = "saga",
             RejectionReason = "timeout",
             // No RejectedCommand set
         };
