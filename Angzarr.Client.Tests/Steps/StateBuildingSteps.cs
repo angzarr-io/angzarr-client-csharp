@@ -326,7 +326,7 @@ public class StateBuildingSteps
             foreach (var seq in seqs)
             {
                 _eventBook!.Pages.Add(
-                    new Angzarr.EventPage { Sequence = (uint)seq, Event = Any.Pack(new Empty()) }
+                    new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)seq }, Event = Any.Pack(new Empty()) }
                 );
             }
         }
@@ -351,7 +351,7 @@ public class StateBuildingSteps
             // Use Any.Pack for proper type URL that StateRouter can process
             // Store original type in context for assertions that need it
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = seq, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = seq }, Event = Any.Pack(new Empty()) }
             );
             _ctx[$"event_{seq}_type"] = type;
         }
@@ -364,21 +364,21 @@ public class StateBuildingSteps
         _eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = Any.Pack(new Empty(), "type.googleapis.com/A"),
             }
         );
         _eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 2,
+                Header = new Angzarr.PageHeader { Sequence = 2 },
                 Event = Any.Pack(new Empty(), "type.googleapis.com/B"),
             }
         );
         _eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 3,
+                Header = new Angzarr.PageHeader { Sequence = 3 },
                 Event = Any.Pack(new Empty(), "type.googleapis.com/C"),
             }
         );
@@ -471,7 +471,7 @@ public class StateBuildingSteps
         _eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = Any.Pack(new Empty(), "type.googleapis.com/unknown.Type"),
             }
         );
