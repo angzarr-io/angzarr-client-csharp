@@ -171,7 +171,7 @@ public class MergeStrategySteps
                 {
                     Client = row["client"],
                     Amount = int.Parse(row["amount"]),
-                    Header = new Angzarr.PageHeader { Sequence = uint.Parse(row["sequence"]) },
+                    Sequence = uint.Parse(row["sequence"]),
                 }
             );
         }

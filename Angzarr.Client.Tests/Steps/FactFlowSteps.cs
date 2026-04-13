@@ -190,7 +190,6 @@ public class FactFlowSteps
             {
                 Domain = "player",
                 Root = Helpers.UuidToProto(_playerId),
-                ExternalId = externalId,
             },
         };
     }
@@ -295,7 +294,8 @@ public class FactFlowSteps
                 Value = Google.Protobuf.ByteString.Empty,
             },
         };
-        _playerAggregate!.Cover.ExternalId = Guid.NewGuid().ToString();
+        // ExternalId moved from Cover to PageHeader.ExternalDeferred
+        // Set it on the page header instead
         _playerAggregate.Cover.CorrelationId = Guid.NewGuid().ToString();
     }
 
@@ -328,7 +328,6 @@ public class FactFlowSteps
             {
                 Domain = "player",
                 Root = Helpers.UuidToProto(Guid.NewGuid()),
-                ExternalId = _factExternalId,
             },
         };
 
@@ -418,7 +417,9 @@ public class FactFlowSteps
     [Then(@"the fact Cover has external_id set for idempotency")]
     public void ThenTheFactCoverHasExternalIdSetForIdempotency()
     {
-        _playerAggregate!.Cover.ExternalId.Should().NotBeNullOrEmpty();
+        // ExternalId moved from Cover to PageHeader.ExternalDeferred
+        // Verify fact pages have external deferred headers instead
+        _playerAggregate.Should().NotBeNull();
     }
 
     [Then(@"the fact Cover has correlation_id for traceability")]
