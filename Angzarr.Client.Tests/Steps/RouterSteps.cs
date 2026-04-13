@@ -202,7 +202,7 @@ public class RouterSteps
     public void WhenApplyEventsToBuildState()
     {
         var eventBook = new Angzarr.EventBook();
-        eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
+        eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
         var state = _stateRouter!.WithEventBook(eventBook);
         _ctx["state"] = state;
     }
@@ -232,7 +232,7 @@ public class RouterSteps
         eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = Any.Pack(new Empty(), "type.googleapis.com/" + eventType),
             }
         );
@@ -253,7 +253,7 @@ public class RouterSteps
         commandBook.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Command = Any.Pack(new Empty(), "type.googleapis.com/" + commandType),
             }
         );
@@ -292,7 +292,7 @@ public class RouterSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
         var rejectionNotification = new Angzarr.RejectionNotification
@@ -331,7 +331,7 @@ public class RouterSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
         var rejectionNotification = new Angzarr.RejectionNotification
@@ -493,7 +493,7 @@ public class RouterSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
         var rejectionNotification = new Angzarr.RejectionNotification
@@ -592,7 +592,7 @@ public class RouterSteps
         commandBook.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Command = Google.Protobuf.WellKnownTypes.Any.Pack(
                     new Google.Protobuf.WellKnownTypes.Empty(),
                     "type.googleapis.com/TestCommand"
@@ -672,7 +672,7 @@ public class TestAggregateHandler : ICommandHandlerDomainHandler<TestState>
             {
                 var eventBook = new Angzarr.EventBook { Cover = cmd.Cover };
                 eventBook.Pages.Add(
-                    new Angzarr.EventPage { Sequence = (uint)seq, Event = Any.Pack(new Empty()) }
+                    new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)seq }, Event = Any.Pack(new Empty()) }
                 );
                 return eventBook;
             }

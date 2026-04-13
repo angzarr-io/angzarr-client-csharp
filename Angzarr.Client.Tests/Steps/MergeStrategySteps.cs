@@ -58,7 +58,7 @@ public class MergeStrategySteps
             _aggregate.Pages.Add(
                 new Angzarr.EventPage
                 {
-                    Sequence = seq,
+                    Header = new Angzarr.PageHeader { Sequence = seq },
                     Event = new Any
                     {
                         TypeUrl = $"type.googleapis.com/examples.{type}",
@@ -171,7 +171,7 @@ public class MergeStrategySteps
                 {
                     Client = row["client"],
                     Amount = int.Parse(row["amount"]),
-                    Sequence = uint.Parse(row["sequence"]),
+                    Header = new Angzarr.PageHeader { Sequence = uint.Parse(row["sequence"]) },
                 }
             );
         }
@@ -266,7 +266,7 @@ public class MergeStrategySteps
         _aggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = (uint)seq1,
+                Header = new Angzarr.PageHeader { Sequence = (uint)seq1 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.TestEvent",
@@ -277,7 +277,7 @@ public class MergeStrategySteps
         _aggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = (uint)seq2,
+                Header = new Angzarr.PageHeader { Sequence = (uint)seq2 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.TestEvent",
@@ -315,7 +315,7 @@ public class MergeStrategySteps
             _aggregate.Pages.Add(
                 new Angzarr.EventPage
                 {
-                    Sequence = (uint)(_aggregate.Pages.Count),
+                    Header = new Angzarr.PageHeader { Sequence = (uint)(_aggregate.Pages.Count) },
                     Event = new Any
                     {
                         TypeUrl = "type.googleapis.com/examples.TestEvent",
@@ -449,7 +449,7 @@ public class MergeStrategySteps
                     cmd.ResultEvents.Pages.Add(
                         new Angzarr.EventPage
                         {
-                            Sequence = 1,
+                            Header = new Angzarr.PageHeader { Sequence = 1 },
                             Event = new Any
                             {
                                 TypeUrl = "type.googleapis.com/examples.ItemAdded",
@@ -756,7 +756,7 @@ public class MergeStrategySteps
         _command.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = _targetSequence,
+                Header = new Angzarr.PageHeader { Sequence = _targetSequence },
                 MergeStrategy = _mergeStrategy,
                 Command = new Any
                 {

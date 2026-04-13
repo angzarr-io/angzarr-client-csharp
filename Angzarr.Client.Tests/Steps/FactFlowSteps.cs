@@ -38,7 +38,7 @@ public class FactFlowSteps
         _playerAggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.PlayerRegistered",
@@ -59,7 +59,7 @@ public class FactFlowSteps
         _handAggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.HandStarted",
@@ -83,7 +83,7 @@ public class FactFlowSteps
             _playerAggregate.Pages.Add(
                 new Angzarr.EventPage
                 {
-                    Sequence = (uint)(i + 1),
+                    Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) },
                     Event = new Any
                     {
                         TypeUrl = "type.googleapis.com/examples.TestEvent",
@@ -109,7 +109,7 @@ public class FactFlowSteps
         _playerAggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.PlayerRegistered",
@@ -125,7 +125,7 @@ public class FactFlowSteps
         _tableAggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.TableCreated",
@@ -136,7 +136,7 @@ public class FactFlowSteps
         _tableAggregate.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 2,
+                Header = new Angzarr.PageHeader { Sequence = 2 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.PlayerSeated",
@@ -153,7 +153,7 @@ public class FactFlowSteps
         _tableAggregate!.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 3,
+                Header = new Angzarr.PageHeader { Sequence = 3 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.PlayerSatOut",
@@ -201,7 +201,7 @@ public class FactFlowSteps
         var nextSeq = (uint)(_playerAggregate!.Pages.Count + 1);
         _injectedFact = new Angzarr.EventPage
         {
-            Sequence = nextSeq,
+            Header = new Angzarr.PageHeader { Sequence = nextSeq },
             Event = new Any
             {
                 TypeUrl = "type.googleapis.com/examples.ActionRequested",
@@ -217,7 +217,7 @@ public class FactFlowSteps
         var nextSeq = (uint)(_playerAggregate!.Pages.Count + 1);
         _injectedFact = new Angzarr.EventPage
         {
-            Sequence = nextSeq,
+            Header = new Angzarr.PageHeader { Sequence = nextSeq },
             Event = new Any
             {
                 TypeUrl = "type.googleapis.com/examples.ActionRequested",
@@ -233,7 +233,7 @@ public class FactFlowSteps
         _playerAggregate!.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = (uint)(_playerAggregate.Pages.Count + 1),
+                Header = new Angzarr.PageHeader { Sequence = (uint)(_playerAggregate.Pages.Count + 1) },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.PlayerSittingOut",
@@ -245,7 +245,7 @@ public class FactFlowSteps
         var nextTableSeq = (uint)(_tableAggregate!.Pages.Count + 1);
         _injectedFact = new Angzarr.EventPage
         {
-            Sequence = nextTableSeq,
+            Header = new Angzarr.PageHeader { Sequence = nextTableSeq },
             Event = new Any
             {
                 TypeUrl = "type.googleapis.com/examples.PlayerSatOut",
@@ -261,7 +261,7 @@ public class FactFlowSteps
         _playerAggregate!.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = (uint)(_playerAggregate.Pages.Count + 1),
+                Header = new Angzarr.PageHeader { Sequence = (uint)(_playerAggregate.Pages.Count + 1) },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/examples.PlayerReturning",
@@ -273,7 +273,7 @@ public class FactFlowSteps
         var nextTableSeq = (uint)(_tableAggregate!.Pages.Count + 1);
         _injectedFact = new Angzarr.EventPage
         {
-            Sequence = nextTableSeq,
+            Header = new Angzarr.PageHeader { Sequence = nextTableSeq },
             Event = new Any
             {
                 TypeUrl = "type.googleapis.com/examples.PlayerSatIn",
@@ -288,7 +288,7 @@ public class FactFlowSteps
     {
         _injectedFact = new Angzarr.EventPage
         {
-            Sequence = 1,
+            Header = new Angzarr.PageHeader { Sequence = 1 },
             Event = new Any
             {
                 TypeUrl = "type.googleapis.com/examples.TestFact",
@@ -315,7 +315,7 @@ public class FactFlowSteps
     {
         _injectedFact = new Angzarr.EventPage
         {
-            Sequence = 1,
+            Header = new Angzarr.PageHeader { Sequence = 1 },
             Event = new Any
             {
                 TypeUrl = "type.googleapis.com/examples.TestFact",

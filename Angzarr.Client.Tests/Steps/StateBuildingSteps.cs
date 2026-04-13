@@ -54,7 +54,7 @@ public class StateBuildingSteps
         var snapshotState = new AggregateState { Counter = seq, LastEventType = "snapshot" };
         _snapshot = new Angzarr.Snapshot
         {
-            Sequence = (uint)seq,
+            Header = new Angzarr.PageHeader { Sequence = (uint)seq },
             State = Any.Pack(new Empty()), // Simplified for test
             Retention = Angzarr.SnapshotRetention.RetentionDefault,
         };
@@ -314,7 +314,7 @@ public class StateBuildingSteps
         {
             _eventBook!.Snapshot = new Angzarr.Snapshot
             {
-                Sequence = (uint)snapSeq,
+                Header = new Angzarr.PageHeader { Sequence = (uint)snapSeq },
                 State = Any.Pack(new Empty()),
             };
             _ctx["snapshot_sequence"] = snapSeq;
@@ -391,7 +391,7 @@ public class StateBuildingSteps
         for (int i = 1; i <= seq; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
         // Share via context for other step classes
@@ -407,7 +407,7 @@ public class StateBuildingSteps
             _eventBook.Pages.Add(
                 new Angzarr.EventPage
                 {
-                    Sequence = (uint)(i + 1),
+                    Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) },
                     Event = Any.Pack(new Empty(), $"type.googleapis.com/{type}"),
                 }
             );
@@ -450,14 +450,14 @@ public class StateBuildingSteps
             Cover = new Angzarr.Cover { Domain = "test" },
             Snapshot = new Angzarr.Snapshot
             {
-                Sequence = (uint)snapSeq,
+                Header = new Angzarr.PageHeader { Sequence = (uint)snapSeq },
                 State = Any.Pack(new Empty()),
             },
         };
         for (int i = snapSeq + 1; i <= eventSeq; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
         // Share via context for other step classes

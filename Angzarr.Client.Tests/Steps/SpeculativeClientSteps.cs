@@ -40,7 +40,7 @@ public class SpeculativeClientSteps
         {
             Cover = new Angzarr.Cover { Domain = domain, Root = Helpers.UuidToProto(guid) },
         };
-        _eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
+        _eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
     }
 
     [Given(@"(\d+) events for ""(.*)"" root ""(.*)""")]
@@ -54,7 +54,7 @@ public class SpeculativeClientSteps
         for (int i = 0; i < count; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
         _ctx["shared_eventbook"] = _eventBook;
@@ -65,7 +65,7 @@ public class SpeculativeClientSteps
     {
         _response = new Angzarr.BusinessResponse { Events = new Angzarr.EventBook() };
         _response.Events.Pages.Add(
-            new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) }
+            new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) }
         );
     }
 
@@ -254,7 +254,7 @@ public class SpeculativeClientSteps
     {
         _response = new Angzarr.BusinessResponse { Events = new Angzarr.EventBook() };
         _response.Events.Pages.Add(
-            new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) }
+            new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) }
         );
         // Track speculative results for independence verification
         if (!_ctx.ContainsKey("speculative_results"))
@@ -269,7 +269,7 @@ public class SpeculativeClientSteps
     {
         _response = new Angzarr.BusinessResponse { Events = new Angzarr.EventBook() };
         _response.Events.Pages.Add(
-            new Angzarr.EventPage { Sequence = 2, Event = Any.Pack(new Empty()) }
+            new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 2 }, Event = Any.Pack(new Empty()) }
         );
         // Track speculative results for independence verification
         if (!_ctx.ContainsKey("speculative_results"))
@@ -286,7 +286,7 @@ public class SpeculativeClientSteps
         for (int i = 0; i < count; i++)
         {
             _response.Events.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -363,7 +363,7 @@ public class SpeculativeClientSteps
         for (int i = 0; i < eventCount; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
         _ctx["speculative_base_events"] = eventCount;

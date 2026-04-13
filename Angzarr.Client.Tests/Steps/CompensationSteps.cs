@@ -38,7 +38,7 @@ public class CompensationSteps
         commandBook.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Command = Any.Pack(new Empty(), $"type.googleapis.com/{commandType}"),
             }
         );
@@ -74,7 +74,7 @@ public class CompensationSteps
                     {
                         Pages =
                         {
-                            new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) },
+                            new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) },
                         },
                     },
                 };
@@ -199,7 +199,7 @@ public class CompensationSteps
                         {
                             new Angzarr.EventPage
                             {
-                                Sequence = 1,
+                                Header = new Angzarr.PageHeader { Sequence = 1 },
                                 Event = Any.Pack(
                                     new Empty(),
                                     "type.googleapis.com/test.StockReservationCancelled"

@@ -445,8 +445,8 @@ public class QueryBuilderSteps
         {
             Cover = new Angzarr.Cover { Domain = domain, Root = Helpers.UuidToProto(guid) },
         };
-        eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
-        eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 2, Event = Any.Pack(new Empty()) });
+        eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
+        eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 2 }, Event = Any.Pack(new Empty()) });
         _ctx["shared_eventbook"] = eventBook;
     }
 
@@ -461,8 +461,8 @@ public class QueryBuilderSteps
         {
             Cover = new Angzarr.Cover { Domain = domain, Root = Helpers.UuidToProto(guid) },
         };
-        eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
-        eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 2, Event = Any.Pack(new Empty()) });
+        eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
+        eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 2 }, Event = Any.Pack(new Empty()) });
         _ctx["shared_eventbook"] = eventBook;
     }
 

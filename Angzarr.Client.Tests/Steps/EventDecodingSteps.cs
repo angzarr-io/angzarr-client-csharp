@@ -20,7 +20,7 @@ public class EventDecodingSteps
     [Given(@"an EventPage with inline payload")]
     public void GivenEventPageWithInlinePayload()
     {
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) };
     }
 
     [Given(@"an EventPage with external payload reference")]
@@ -28,7 +28,7 @@ public class EventDecodingSteps
     {
         _eventPage = new Angzarr.EventPage
         {
-            Sequence = 1,
+            Header = new Angzarr.PageHeader { Sequence = 1 },
             Event = Any.Pack(new Empty()),
             External = new Angzarr.PayloadReference
             {
@@ -45,7 +45,7 @@ public class EventDecodingSteps
         for (int i = 0; i < count; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -230,7 +230,7 @@ public class EventDecodingSteps
     [Given(@"an EventPage with Event payload")]
     public void GivenAnEventPageWithEventPayload()
     {
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) };
     }
 
     [Given(@"an EventPage with offloaded payload")]
@@ -238,7 +238,7 @@ public class EventDecodingSteps
     {
         _eventPage = new Angzarr.EventPage
         {
-            Sequence = 1,
+            Header = new Angzarr.PageHeader { Sequence = 1 },
             External = new Angzarr.PayloadReference
             {
                 StorageType = Angzarr.PayloadStorageType.S3,
@@ -250,20 +250,20 @@ public class EventDecodingSteps
     [Given(@"an EventPage with payload = None")]
     public void GivenAnEventPageWithPayloadNone()
     {
-        _eventPage = new Angzarr.EventPage { Sequence = 1 };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 } };
     }
 
     [Given(@"an EventPage with timestamp")]
     public void GivenAnEventPageWithTimestamp()
     {
         // EventPage doesn't have a Timestamp field, using Event instead
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) };
     }
 
     [Given(@"an Event Any with empty value")]
     public void GivenAnEventAnyWithEmptyValue()
     {
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) };
     }
 
     [Given(@"an event with type_url ""(.*)""")]
@@ -271,7 +271,7 @@ public class EventDecodingSteps
     {
         _eventPage = new Angzarr.EventPage
         {
-            Sequence = 1,
+            Header = new Angzarr.PageHeader { Sequence = 1 },
             Event = new Any { TypeUrl = typeUrl, Value = new Empty().ToByteString() },
         };
 
@@ -286,7 +286,7 @@ public class EventDecodingSteps
     {
         _eventPage = new Angzarr.EventPage
         {
-            Sequence = 1,
+            Header = new Angzarr.PageHeader { Sequence = 1 },
             Event = Any.Pack(new Empty(), $"type.googleapis.com/{suffix}"),
         };
     }
@@ -294,7 +294,7 @@ public class EventDecodingSteps
     [Given(@"an event with properly encoded payload")]
     public void GivenAnEventWithProperlyEncodedPayload()
     {
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) };
     }
 
     [Given(@"an event with empty payload bytes")]
@@ -305,7 +305,7 @@ public class EventDecodingSteps
             TypeUrl = "type.googleapis.com/google.protobuf.Empty",
             Value = ByteString.Empty,
         };
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = anyMsg };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = anyMsg };
     }
 
     [Given(@"an event with corrupted payload bytes")]
@@ -316,7 +316,7 @@ public class EventDecodingSteps
             TypeUrl = "type.googleapis.com/google.protobuf.Empty",
             Value = ByteString.CopyFromUtf8("corrupted-bytes"),
         };
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = anyMsg };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = anyMsg };
         // Share via context for other step classes
         _ctx["corrupted_event_page"] = _eventPage;
     }
@@ -324,7 +324,7 @@ public class EventDecodingSteps
     [Given(@"an event missing a required field")]
     public void GivenAnEventMissingARequiredField()
     {
-        _eventPage = new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) };
+        _eventPage = new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) };
     }
 
     [When(@"I access the event\.payload")]
@@ -649,8 +649,8 @@ public class EventDecodingSteps
     public void WhenIProcessTwoEventsWithSameType()
     {
         _eventBook = new Angzarr.EventBook { Cover = new Angzarr.Cover { Domain = "test" } };
-        _eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
-        _eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 2, Event = Any.Pack(new Empty()) });
+        _eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
+        _eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 2 }, Event = Any.Pack(new Empty()) });
 
         // Build state for stateless verification - each event processed independently
         var stateRouter = new StateRouter<TestEventProcessingState>().On<Empty>(
@@ -668,7 +668,7 @@ public class EventDecodingSteps
         for (int i = from; i <= to; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
     }
