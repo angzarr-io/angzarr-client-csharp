@@ -54,7 +54,7 @@ public class StateBuildingSteps
         var snapshotState = new AggregateState { Counter = seq, LastEventType = "snapshot" };
         _snapshot = new Angzarr.Snapshot
         {
-            Header = new Angzarr.PageHeader { Sequence = (uint)seq },
+            Sequence = (uint)seq,
             State = Any.Pack(new Empty()), // Simplified for test
             Retention = Angzarr.SnapshotRetention.RetentionDefault,
         };
@@ -314,7 +314,7 @@ public class StateBuildingSteps
         {
             _eventBook!.Snapshot = new Angzarr.Snapshot
             {
-                Header = new Angzarr.PageHeader { Sequence = (uint)snapSeq },
+                Sequence = (uint)snapSeq,
                 State = Any.Pack(new Empty()),
             };
             _ctx["snapshot_sequence"] = snapSeq;
@@ -450,7 +450,7 @@ public class StateBuildingSteps
             Cover = new Angzarr.Cover { Domain = "test" },
             Snapshot = new Angzarr.Snapshot
             {
-                Header = new Angzarr.PageHeader { Sequence = (uint)snapSeq },
+                Sequence = (uint)snapSeq,
                 State = Any.Pack(new Empty()),
             },
         };
