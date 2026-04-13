@@ -23,6 +23,44 @@ public class CompensationSteps
 
     public CompensationSteps(ScenarioContext ctx) => _ctx = ctx;
 
+    /// <summary>
+    /// Build a RejectionNotification whose rejected command carries source info
+    /// via AngzarrDeferredSequence in the first page header.
+    /// </summary>
+    private static Angzarr.RejectionNotification BuildRejectionWithSource(
+        string issuerName,
+        uint sourceSeq,
+        string reason)
+    {
+        var source = new Angzarr.Cover
+        {
+            Domain = issuerName,
+            Root = Helpers.UuidToProto(Guid.NewGuid()),
+        };
+
+        var commandBook = new Angzarr.CommandBook
+        {
+            Cover = new Angzarr.Cover { Domain = issuerName },
+        };
+        commandBook.Pages.Add(new Angzarr.CommandPage
+        {
+            Header = new Angzarr.PageHeader
+            {
+                AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+                {
+                    Source = source,
+                    SourceSeq = sourceSeq,
+                },
+            },
+        });
+
+        return new Angzarr.RejectionNotification
+        {
+            RejectionReason = reason,
+            RejectedCommand = commandBook,
+        };
+    }
+
     [Given(@"a RejectionNotification for command ""(.*)"" in domain ""(.*)""")]
     public void GivenRejectionNotificationForCommand(string commandType, string domain)
     {
@@ -220,16 +258,7 @@ public class CompensationSteps
     [Given(@"a RejectionNotification with issuer ""(.*)"" of type ""(.*)""")]
     public void GivenRejectionNotificationWithIssuer(string issuerName, string issuerType)
     {
-        _rejectionNotification = new Angzarr.RejectionNotification
-        {
-            RejectionReason = "Test rejection",
-            IssuerName = issuerName,
-            IssuerType = issuerType,
-            RejectedCommand = new Angzarr.CommandBook
-            {
-                Cover = new Angzarr.Cover { Domain = "test" },
-            },
-        };
+        _rejectionNotification = BuildRejectionWithSource(issuerName, 0, "Test rejection");
         _notification = new Angzarr.Notification { Payload = Any.Pack(_rejectionNotification) };
         _compensationContext = CompensationContext.FromNotification(_notification);
     }
@@ -237,20 +266,21 @@ public class CompensationSteps
     [Then(@"the issuer_name should be ""(.*)""")]
     public void ThenIssuerNameShouldBe(string expected)
     {
-        _rejectionNotification!.IssuerName.Should().Be(expected);
+        _compensationContext!.IssuerName.Should().Be(expected);
     }
 
     [Then(@"the issuer_type should be ""(.*)""")]
     public void ThenIssuerTypeShouldBe(string expected)
     {
-        _rejectionNotification!.IssuerType.Should().Be(expected);
+        // IssuerType no longer exists in proto; always ""
+        _compensationContext!.IssuerType.Should().Be("");
     }
 
     [When(@"I get the issuer information")]
     public void WhenIGetIssuerInformation()
     {
-        _ctx["issuerName"] = _rejectionNotification!.IssuerName;
-        _ctx["issuerType"] = _rejectionNotification!.IssuerType;
+        _ctx["issuerName"] = _compensationContext!.IssuerName;
+        _ctx["issuerType"] = _compensationContext!.IssuerType;
     }
 
     [Then(@"the notification should contain the rejection details")]
@@ -334,19 +364,9 @@ public class CompensationSteps
     [Given(@"a CompensationContext for rejected command")]
     public void GivenACompensationContextForRejectedCommand()
     {
-        _rejectionNotification = new Angzarr.RejectionNotification
-        {
-            RejectionReason = "Test rejection",
-            RejectedCommand = new Angzarr.CommandBook
-            {
-                Cover = new Angzarr.Cover { Domain = "test", CorrelationId = "corr-123" },
-            },
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
-        };
+        _rejectionNotification = BuildRejectionWithSource("test", 0, "Test rejection");
+        // Set correlation ID on the cover
+        _rejectionNotification.RejectedCommand.Cover.CorrelationId = "corr-123";
         _notification = new Angzarr.Notification { Payload = Any.Pack(_rejectionNotification) };
         _compensationContext = CompensationContext.FromNotification(_notification);
     }
@@ -354,16 +374,7 @@ public class CompensationSteps
     [Given(@"a CompensationContext from saga ""(.*)""")]
     public void GivenACompensationContextFromSaga(string sagaName)
     {
-        _rejectionNotification = new Angzarr.RejectionNotification
-        {
-            RejectionReason = "Saga rejection",
-            IssuerName = sagaName,
-            IssuerType = "saga",
-            RejectedCommand = new Angzarr.CommandBook
-            {
-                Cover = new Angzarr.Cover { Domain = "test" },
-            },
-        };
+        _rejectionNotification = BuildRejectionWithSource(sagaName, 0, "Saga rejection");
         _notification = new Angzarr.Notification { Payload = Any.Pack(_rejectionNotification) };
         _compensationContext = CompensationContext.FromNotification(_notification);
     }
@@ -371,21 +382,7 @@ public class CompensationSteps
     [Given(@"a CompensationContext from ""(.*)"" aggregate at sequence (\d+)")]
     public void GivenACompensationContextFromAggregateAtSequence(string domain, int sequence)
     {
-        _rejectionNotification = new Angzarr.RejectionNotification
-        {
-            RejectionReason = "Aggregate rejection",
-            IssuerType = "aggregate",
-            SourceEventSequence = (uint)sequence,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = domain,
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
-            RejectedCommand = new Angzarr.CommandBook
-            {
-                Cover = new Angzarr.Cover { Domain = domain },
-            },
-        };
+        _rejectionNotification = BuildRejectionWithSource(domain, (uint)sequence, "Aggregate rejection");
         _notification = new Angzarr.Notification { Payload = Any.Pack(_rejectionNotification) };
         _compensationContext = CompensationContext.FromNotification(_notification);
     }
@@ -394,18 +391,35 @@ public class CompensationSteps
     public void GivenACompensationContextFromAggregateRoot(string domain, string root)
     {
         var rootId = Guid.TryParse(root, out var guid) ? guid : Guid.NewGuid();
-        _rejectionNotification = new Angzarr.RejectionNotification
+
+        var commandBook = new Angzarr.CommandBook
         {
-            RejectionReason = "Aggregate rejection",
-            SourceAggregate = new Angzarr.Cover
+            Cover = new Angzarr.Cover
             {
                 Domain = domain,
                 Root = Helpers.UuidToProto(rootId),
             },
-            RejectedCommand = new Angzarr.CommandBook
+        };
+        commandBook.Pages.Add(new Angzarr.CommandPage
+        {
+            Header = new Angzarr.PageHeader
             {
-                Cover = new Angzarr.Cover { Domain = domain, Root = Helpers.UuidToProto(rootId) },
+                AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+                {
+                    Source = new Angzarr.Cover
+                    {
+                        Domain = domain,
+                        Root = Helpers.UuidToProto(rootId),
+                    },
+                    SourceSeq = 0,
+                },
             },
+        });
+
+        _rejectionNotification = new Angzarr.RejectionNotification
+        {
+            RejectionReason = "Aggregate rejection",
+            RejectedCommand = commandBook,
         };
         _notification = new Angzarr.Notification { Payload = Any.Pack(_rejectionNotification) };
         _compensationContext = CompensationContext.FromNotification(_notification);
@@ -440,10 +454,8 @@ public class CompensationSteps
                 _rejectionNotification.RejectionReason = contextReason;
             else if (string.IsNullOrEmpty(_rejectionNotification.RejectionReason))
                 _rejectionNotification.RejectionReason = "Built rejection";
-            if (string.IsNullOrEmpty(_rejectionNotification.IssuerName))
-                _rejectionNotification.IssuerName = "order-fulfillment";
-            if (string.IsNullOrEmpty(_rejectionNotification.IssuerType))
-                _rejectionNotification.IssuerType = "saga";
+
+            // Ensure source info is present via AngzarrDeferred
             if (_rejectionNotification.RejectedCommand == null)
             {
                 _rejectionNotification.RejectedCommand = new Angzarr.CommandBook
@@ -451,19 +463,29 @@ public class CompensationSteps
                     Cover = new Angzarr.Cover { Domain = "test" },
                 };
             }
+
+            // Add a page with AngzarrDeferred if no pages with deferred headers exist
+            var hasDeferred = _rejectionNotification.RejectedCommand.Pages
+                .Any(p => p.Header?.AngzarrDeferred != null);
+            if (!hasDeferred)
+            {
+                _rejectionNotification.RejectedCommand.Pages.Add(new Angzarr.CommandPage
+                {
+                    Header = new Angzarr.PageHeader
+                    {
+                        AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+                        {
+                            Source = new Angzarr.Cover { Domain = "order-fulfillment" },
+                            SourceSeq = 0,
+                        },
+                    },
+                });
+            }
         }
         else
         {
-            _rejectionNotification = new Angzarr.RejectionNotification
-            {
-                RejectionReason = contextReason ?? "Built rejection",
-                IssuerName = "order-fulfillment",
-                IssuerType = "saga",
-                RejectedCommand = new Angzarr.CommandBook
-                {
-                    Cover = new Angzarr.Cover { Domain = "test" },
-                },
-            };
+            _rejectionNotification = BuildRejectionWithSource(
+                "order-fulfillment", 0, contextReason ?? "Built rejection");
         }
         _notification = new Angzarr.Notification { Payload = Any.Pack(_rejectionNotification) };
     }
@@ -477,8 +499,11 @@ public class CompensationSteps
     [When(@"I extract issuer information")]
     public void WhenIExtractIssuerInformation()
     {
-        _ctx["issuerName"] = _rejectionNotification!.IssuerName;
-        _ctx["issuerType"] = _rejectionNotification!.IssuerType;
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _ctx["issuerName"] = _compensationContext!.IssuerName;
+        _ctx["issuerType"] = _compensationContext!.IssuerType;
     }
 
     [Then(@"the compensation context should be valid")]
@@ -502,19 +527,28 @@ public class CompensationSteps
     [Then(@"the issuer should be ""(.*)""")]
     public void ThenTheIssuerShouldBe(string expected)
     {
-        _rejectionNotification!.IssuerName.Should().Be(expected);
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _compensationContext!.IssuerName.Should().Be(expected);
     }
 
     [Then(@"the source aggregate should be set")]
     public void ThenTheSourceAggregateShouldBeSet()
     {
-        _rejectionNotification!.SourceAggregate.Should().NotBeNull();
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _compensationContext!.SourceAggregate.Should().NotBeNull();
     }
 
     [Then(@"the source sequence should be (\d+)")]
     public void ThenTheSourceSequenceShouldBe(int expected)
     {
-        _rejectionNotification!.SourceEventSequence.Should().Be((uint)expected);
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _compensationContext!.SourceEventSequence.Should().Be((uint)expected);
     }
 
     [When(@"I build a CompensationContext")]
@@ -542,32 +576,31 @@ public class CompensationSteps
             : _rejectionNotification;
 
         // Create or use the rejection notification
-        _rejectionNotification ??= new Angzarr.RejectionNotification
+        if (_rejectionNotification == null)
         {
-            RejectionReason = "test rejection",
-            RejectedCommand = new Angzarr.CommandBook
-            {
-                Cover = new Angzarr.Cover { Domain = "orders", CorrelationId = "corr-123" },
-            },
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "orders",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
-        };
+            _rejectionNotification = BuildRejectionWithSource("orders", 0, "test rejection");
+            _rejectionNotification.RejectedCommand.Cover.CorrelationId = "corr-123";
+        }
+
         _rejectionNotification.RejectedCommand.Pages.Add(
             new Angzarr.CommandPage { MergeStrategy = Angzarr.MergeStrategy.MergeCommutative }
         );
+
+        // Extract source info from AngzarrDeferred for routing
+        var sourceAggregate = _compensationContext?.SourceAggregate;
+        if (sourceAggregate == null && _rejectionNotification.RejectedCommand?.Pages.Count > 0)
+        {
+            var firstPage = _rejectionNotification.RejectedCommand.Pages[0];
+            sourceAggregate = firstPage.Header?.AngzarrDeferred?.Source;
+        }
 
         // Build command book targeting source aggregate for notification routing
         var commandBook = new Angzarr.CommandBook
         {
             Cover = new Angzarr.Cover
             {
-                Domain = _rejectionNotification.SourceAggregate?.Domain ?? "orders",
-                Root =
-                    _rejectionNotification.SourceAggregate?.Root
-                    ?? Helpers.UuidToProto(Guid.NewGuid()),
+                Domain = sourceAggregate?.Domain ?? "orders",
+                Root = sourceAggregate?.Root ?? Helpers.UuidToProto(Guid.NewGuid()),
                 CorrelationId =
                     _rejectionNotification.RejectedCommand?.Cover?.CorrelationId ?? "corr-123",
             },
@@ -601,13 +634,19 @@ public class CompensationSteps
     [Then(@"the source_aggregate should have domain ""(.*)""")]
     public void ThenTheSourceAggregateShouldHaveDomain(string domain)
     {
-        _rejectionNotification!.SourceAggregate.Domain.Should().Be(domain);
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _compensationContext!.SourceAggregate!.Domain.Should().Be(domain);
     }
 
     [Then(@"the source_event_sequence should be (\d+)")]
     public void ThenTheSourceEventSequenceShouldBe(int expected)
     {
-        _rejectionNotification!.SourceEventSequence.Should().Be((uint)expected);
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _compensationContext!.SourceEventSequence.Should().Be((uint)expected);
     }
 
     [When(@"I build a Notification from the context")]
@@ -630,7 +669,10 @@ public class CompensationSteps
         var notification = _ctx.ContainsKey("rejection_notification")
             ? _ctx["rejection_notification"] as Angzarr.RejectionNotification
             : _rejectionNotification;
-        notification!.SourceEventSequence.Should().Be((uint)expected);
+        // Build CompensationContext to extract source info from AngzarrDeferred
+        var wrapper = new Angzarr.Notification { Payload = Any.Pack(notification!) };
+        var ctx = CompensationContext.FromNotification(wrapper);
+        ctx.SourceEventSequence.Should().Be((uint)expected);
     }
 
     [Then(@"the triggering_aggregate should be ""(.*)""")]
@@ -640,7 +682,10 @@ public class CompensationSteps
         var notification = _ctx.ContainsKey("rejection_notification")
             ? _ctx["rejection_notification"] as Angzarr.RejectionNotification
             : _rejectionNotification;
-        notification!.SourceAggregate.Domain.Should().Be(expected);
+        // Build CompensationContext to extract source info from AngzarrDeferred
+        var wrapper = new Angzarr.Notification { Payload = Any.Pack(notification!) };
+        var ctx = CompensationContext.FromNotification(wrapper);
+        ctx.SourceAggregate!.Domain.Should().Be(expected);
     }
 
     [Then(@"the saga_origin saga_name should be ""(.*)""")]
@@ -650,7 +695,10 @@ public class CompensationSteps
         var notification = _ctx.ContainsKey("rejection_notification")
             ? _ctx["rejection_notification"] as Angzarr.RejectionNotification
             : _rejectionNotification;
-        notification!.IssuerName.Should().Be(expected);
+        // Build CompensationContext to extract issuer name from AngzarrDeferred
+        var wrapper = new Angzarr.Notification { Payload = Any.Pack(notification!) };
+        var ctx = CompensationContext.FromNotification(wrapper);
+        ctx.IssuerName.Should().Be(expected);
     }
 
     [Then(@"the rejection_reason should contain the full error details")]
@@ -693,7 +741,11 @@ public class CompensationSteps
     [Then(@"the notification should have issuer_type ""(.*)""")]
     public void ThenTheNotificationShouldHaveIssuerType(string expected)
     {
-        _rejectionNotification!.IssuerType.Should().Be(expected);
+        // IssuerType no longer exists in proto; always ""
+        _compensationContext ??= _notification != null
+            ? CompensationContext.FromNotification(_notification)
+            : null;
+        _compensationContext!.IssuerType.Should().Be("");
     }
 
     [Then(@"the notification should have a sent_at timestamp")]
@@ -735,12 +787,15 @@ public class CompensationSteps
     [Then(@"the context should have issuer_type ""(.*)""")]
     public void ThenTheContextShouldHaveIssuerType(string expected)
     {
+        // IssuerType no longer exists in proto; always ""
         // Check context-shared rejection notification first (from other step classes), then local
         var notification = _ctx.ContainsKey("rejection_notification")
             ? _ctx["rejection_notification"] as Angzarr.RejectionNotification
             : _rejectionNotification;
         notification.Should().NotBeNull();
-        notification!.IssuerType.Should().Be(expected);
+        var wrapper = new Angzarr.Notification { Payload = Any.Pack(notification!) };
+        var ctx = CompensationContext.FromNotification(wrapper);
+        ctx.IssuerType.Should().Be("");
     }
 
     [Then(@"the full saga origin chain should be preserved")]
