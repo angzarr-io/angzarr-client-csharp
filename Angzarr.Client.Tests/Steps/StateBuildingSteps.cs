@@ -43,7 +43,7 @@ public class StateBuildingSteps
         for (int i = 0; i < count; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -177,7 +177,7 @@ public class StateBuildingSteps
         _eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = Any.Pack(new Duration(), "type.googleapis.com/unknown.EventType"),
             }
         );
@@ -243,7 +243,7 @@ public class StateBuildingSteps
         );
         // Create an event book with test events for _apply_event scenario
         _eventBook = new Angzarr.EventBook { Cover = new Angzarr.Cover { Domain = "test" } };
-        _eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
+        _eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
         _ctx["shared_eventbook"] = _eventBook;
         // Share the decoded event for assertions
         _ctx["decoded_event"] = _eventBook.Pages[0].Event;
@@ -266,7 +266,7 @@ public class StateBuildingSteps
                 Root = Helpers.UuidToProto(Guid.NewGuid()),
             },
         };
-        _eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
+        _eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
     }
 
     [Given(@"an EventBook with:")]
@@ -488,7 +488,7 @@ public class StateBuildingSteps
         );
         // Create event book with one event for the "apply event" step
         _eventBook = new Angzarr.EventBook { Cover = new Angzarr.Cover { Domain = "test" } };
-        _eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
+        _eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
         _ctx["shared_eventbook"] = _eventBook;
     }
 
