@@ -776,13 +776,22 @@ public class UnifiedRouterTests
     {
         var rejectedCommand = new CommandBook { Cover = new Cover { Domain = domain } };
         rejectedCommand.Pages.Add(
-            new CommandPage { Command = new Any { TypeUrl = $"type.googleapis.com/{commandType}" } }
+            new CommandPage
+            {
+                Header = new PageHeader
+                {
+                    AngzarrDeferred = new AngzarrDeferredSequence
+                    {
+                        Source = new Cover { Domain = "test-saga" },
+                        SourceSeq = 1,
+                    },
+                },
+                Command = new Any { TypeUrl = $"type.googleapis.com/{commandType}" },
+            }
         );
 
         var rejection = new RejectionNotification
         {
-            IssuerName = "test-saga",
-            IssuerType = "saga",
             RejectionReason = reason,
             RejectedCommand = rejectedCommand,
         };

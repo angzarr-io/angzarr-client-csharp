@@ -295,18 +295,19 @@ public class RouterSteps
             new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        // Convey source info via AngzarrDeferred header
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = sagaName },
+                SourceSeq = (uint)seq,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "Saga command rejected",
             RejectedCommand = commandBook,
-            IssuerName = sagaName,
-            IssuerType = "saga",
-            SourceEventSequence = (uint)seq,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = domain,
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
 
@@ -334,15 +335,19 @@ public class RouterSteps
             new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        // Convey source info via AngzarrDeferred header
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = "test", Root = Helpers.UuidToProto(Guid.NewGuid()) },
+                SourceSeq = 1,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "Test rejection",
             RejectedCommand = commandBook,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
 
@@ -496,17 +501,18 @@ public class RouterSteps
             new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = "test-pm", Root = Helpers.UuidToProto(Guid.NewGuid()) },
+                SourceSeq = 1,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "PM command rejected",
             RejectedCommand = commandBook,
-            IssuerName = "test-pm",
-            IssuerType = "process_manager",
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
     }
@@ -600,10 +606,16 @@ public class RouterSteps
             }
         );
 
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = "rejection-saga" },
+                SourceSeq = 1,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
-            IssuerName = "rejection-saga",
-            IssuerType = "saga",
             RejectionReason = "Command rejected by target aggregate",
             RejectedCommand = commandBook,
         };

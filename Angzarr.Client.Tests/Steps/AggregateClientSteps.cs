@@ -1076,7 +1076,7 @@ public class AggregateClientSteps
             Cover = new Angzarr.Cover { Domain = domain, Root = Helpers.UuidToProto(guid) },
             Snapshot = new Angzarr.Snapshot
             {
-                Header = new Angzarr.PageHeader { Sequence = (uint)snapSeq },
+                Sequence = (uint)snapSeq,
                 State = Any.Pack(new Empty()),
             },
         };
@@ -1184,15 +1184,24 @@ public class AggregateClientSteps
             new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        // Add source info via AngzarrDeferred header
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover
+                {
+                    Domain = "test",
+                    Root = Helpers.UuidToProto(Guid.NewGuid()),
+                },
+                SourceSeq = 1,
+            },
+        };
+
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "Saga command rejected",
             RejectedCommand = commandBook,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
     }
