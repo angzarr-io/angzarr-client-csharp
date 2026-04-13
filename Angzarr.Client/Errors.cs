@@ -43,7 +43,7 @@ public class CommandRejectedError : ClientError
     public CommandRejectedError(string message)
         : base(message)
     {
-        Code = "PRECONDITION_FAILED";
+        Code = "FAILED_PRECONDITION";
     }
 
     public CommandRejectedError(string message, string code)
@@ -52,7 +52,7 @@ public class CommandRejectedError : ClientError
         Code = code;
     }
 
-    public override bool IsPreconditionFailed() => Code == "PRECONDITION_FAILED";
+    public override bool IsPreconditionFailed() => Code == "FAILED_PRECONDITION";
 
     public override bool IsInvalidArgument() => Code == "INVALID_ARGUMENT";
 
@@ -61,7 +61,7 @@ public class CommandRejectedError : ClientError
     /// </summary>
     public static CommandRejectedError PreconditionFailed(string message)
     {
-        return new CommandRejectedError(message, "PRECONDITION_FAILED");
+        return new CommandRejectedError(message, "FAILED_PRECONDITION");
     }
 
     /// <summary>

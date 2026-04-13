@@ -83,7 +83,7 @@ public class AggregateClientSteps
         for (int i = 0; i < 3; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -95,7 +95,7 @@ public class AggregateClientSteps
         for (int i = 0; i < seq; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -209,7 +209,7 @@ public class AggregateClientSteps
                     events.Pages.Add(
                         new Angzarr.EventPage
                         {
-                            Sequence = (uint)(seq + i),
+                            Header = new Angzarr.PageHeader { Sequence = (uint)(seq + i) },
                             Event = Any.Pack(new Empty()),
                         }
                     );
@@ -532,7 +532,7 @@ public class AggregateClientSteps
                 eventBook.Pages.Add(
                     new Angzarr.EventPage
                     {
-                        Sequence = (uint)seq,
+                        Header = new Angzarr.PageHeader { Sequence = (uint)seq },
                         Event =
                             cmdType == "CreateOrder"
                                 ? new Any
@@ -634,11 +634,12 @@ public class AggregateClientSteps
                 Domain = domain,
                 Root = Helpers.UuidToProto(Guid.NewGuid()),
             },
+            NextSequence = (uint)seq,
         };
         for (int i = 0; i < seq; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)i, Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)i }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -1047,7 +1048,7 @@ public class AggregateClientSteps
         for (int i = 0; i < count; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
         // Share event book to context for use by other step classes
@@ -1085,7 +1086,7 @@ public class AggregateClientSteps
             _eventBook.Pages.Add(
                 new Angzarr.EventPage
                 {
-                    Sequence = (uint)(snapSeq + i + 1),
+                    Header = new Angzarr.PageHeader { Sequence = (uint)(snapSeq + i + 1) },
                     Event = Any.Pack(new Empty()),
                 }
             );
@@ -1107,7 +1108,7 @@ public class AggregateClientSteps
         {
             // EventPage doesn't have timestamp field, but Cover does
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
     }
@@ -1181,18 +1182,27 @@ public class AggregateClientSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
+
+        // Add source info via AngzarrDeferred header
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover
+                {
+                    Domain = "test",
+                    Root = Helpers.UuidToProto(Guid.NewGuid()),
+                },
+                SourceSeq = 1,
+            },
+        };
 
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "Saga command rejected",
             RejectedCommand = commandBook,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
     }
@@ -1269,7 +1279,7 @@ public class AggregateClientSteps
         commandBook.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = 0,
+                Header = new Angzarr.PageHeader { Sequence = 0 },
                 Command = new Any
                 {
                     TypeUrl = $"type.googleapis.com/{commandType}",
@@ -1289,7 +1299,7 @@ public class AggregateClientSteps
     {
         var eventBook = new Angzarr.EventBook();
         eventBook.Pages.Add(
-            new Angzarr.EventPage { Sequence = (uint)seq, Event = Any.Pack(new Empty()) }
+            new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)seq }, Event = Any.Pack(new Empty()) }
         );
         return eventBook;
     }
@@ -1308,7 +1318,7 @@ public class AggregateClientSteps
         eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = $"type.googleapis.com/{eventType}",
@@ -1492,7 +1502,7 @@ public class AggregateClientSteps
         for (int i = 0; i < count; i++)
         {
             _eventBook.Pages.Add(
-                new Angzarr.EventPage { Sequence = (uint)(i + 1), Event = Any.Pack(new Empty()) }
+                new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)(i + 1) }, Event = Any.Pack(new Empty()) }
             );
         }
         // Build state from the events
@@ -1538,7 +1548,7 @@ public class AggregateClientSteps
         _eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = "type.googleapis.com/invalid",

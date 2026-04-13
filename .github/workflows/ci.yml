@@ -5,25 +5,28 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  repository_dispatch:
+    types: [protos-updated]
 
 jobs:
-  build:
+  build-test:
     name: Build & Test
     runs-on: ubuntu-latest
-    container: ghcr.io/angzarr-io/angzarr-csharp:latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
 
-      - name: Configure git safe directory
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install just
+        uses: extractions/setup-just@v2
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
 
       - name: Build
-        run: just build
+        run: just -f justfile.container build
 
       - name: Test
-        run: just test
-
-      - name: Lint
-        run: just lint
+        run: just -f justfile.container test

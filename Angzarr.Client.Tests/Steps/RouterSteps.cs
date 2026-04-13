@@ -202,7 +202,7 @@ public class RouterSteps
     public void WhenApplyEventsToBuildState()
     {
         var eventBook = new Angzarr.EventBook();
-        eventBook.Pages.Add(new Angzarr.EventPage { Sequence = 1, Event = Any.Pack(new Empty()) });
+        eventBook.Pages.Add(new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Event = Any.Pack(new Empty()) });
         var state = _stateRouter!.WithEventBook(eventBook);
         _ctx["state"] = state;
     }
@@ -232,7 +232,7 @@ public class RouterSteps
         eventBook.Pages.Add(
             new Angzarr.EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = Any.Pack(new Empty(), "type.googleapis.com/" + eventType),
             }
         );
@@ -253,7 +253,7 @@ public class RouterSteps
         commandBook.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Command = Any.Pack(new Empty(), "type.googleapis.com/" + commandType),
             }
         );
@@ -292,21 +292,22 @@ public class RouterSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        // Convey source info via AngzarrDeferred header
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = domain },
+                SourceSeq = (uint)seq,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "Saga command rejected",
             RejectedCommand = commandBook,
-            IssuerName = sagaName,
-            IssuerType = "saga",
-            SourceEventSequence = (uint)seq,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = domain,
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
 
@@ -331,18 +332,22 @@ public class RouterSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        // Convey source info via AngzarrDeferred header
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = "test", Root = Helpers.UuidToProto(Guid.NewGuid()) },
+                SourceSeq = 1,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "Test rejection",
             RejectedCommand = commandBook,
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
 
@@ -493,20 +498,21 @@ public class RouterSteps
             },
         };
         commandBook.Pages.Add(
-            new Angzarr.CommandPage { Sequence = 1, Command = Any.Pack(new Empty()) }
+            new Angzarr.CommandPage { Header = new Angzarr.PageHeader { Sequence = 1 }, Command = Any.Pack(new Empty()) }
         );
 
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = "test-pm", Root = Helpers.UuidToProto(Guid.NewGuid()) },
+                SourceSeq = 1,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
             RejectionReason = "PM command rejected",
             RejectedCommand = commandBook,
-            IssuerName = "test-pm",
-            IssuerType = "process_manager",
-            SourceAggregate = new Angzarr.Cover
-            {
-                Domain = "test",
-                Root = Helpers.UuidToProto(Guid.NewGuid()),
-            },
         };
         _ctx["rejection_notification"] = rejectionNotification;
     }
@@ -592,7 +598,7 @@ public class RouterSteps
         commandBook.Pages.Add(
             new Angzarr.CommandPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Command = Google.Protobuf.WellKnownTypes.Any.Pack(
                     new Google.Protobuf.WellKnownTypes.Empty(),
                     "type.googleapis.com/TestCommand"
@@ -600,10 +606,16 @@ public class RouterSteps
             }
         );
 
+        commandBook.Pages[0].Header = new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = new Angzarr.Cover { Domain = "rejection-saga" },
+                SourceSeq = 1,
+            },
+        };
         var rejectionNotification = new Angzarr.RejectionNotification
         {
-            IssuerName = "rejection-saga",
-            IssuerType = "saga",
             RejectionReason = "Command rejected by target aggregate",
             RejectedCommand = commandBook,
         };
@@ -672,7 +684,7 @@ public class TestAggregateHandler : ICommandHandlerDomainHandler<TestState>
             {
                 var eventBook = new Angzarr.EventBook { Cover = cmd.Cover };
                 eventBook.Pages.Add(
-                    new Angzarr.EventPage { Sequence = (uint)seq, Event = Any.Pack(new Empty()) }
+                    new Angzarr.EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)seq }, Event = Any.Pack(new Empty()) }
                 );
                 return eventBook;
             }

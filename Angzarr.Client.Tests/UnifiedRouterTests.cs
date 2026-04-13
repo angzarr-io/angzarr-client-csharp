@@ -55,7 +55,7 @@ public class UnifiedRouterTests
             {
                 var eventBook = new EventBook { Cover = cmd.Cover };
                 eventBook.Pages.Add(
-                    new EventPage { Sequence = (uint)seq, Event = Any.Pack(new Empty()) }
+                    new EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)seq }, Event = Any.Pack(new Empty()) }
                 );
                 return eventBook;
             }
@@ -64,7 +64,7 @@ public class UnifiedRouterTests
             {
                 var eventBook = new EventBook { Cover = cmd.Cover };
                 eventBook.Pages.Add(
-                    new EventPage { Sequence = (uint)seq, Event = Any.Pack(new Empty()) }
+                    new EventPage { Header = new Angzarr.PageHeader { Sequence = (uint)seq }, Event = Any.Pack(new Empty()) }
                 );
                 return eventBook;
             }
@@ -109,7 +109,7 @@ public class UnifiedRouterTests
                 cmd.Pages.Add(
                     new CommandPage
                     {
-                        Sequence = 0,
+                        Header = new Angzarr.PageHeader { Sequence = 0 },
                         Command = Any.Pack(new Empty(), "type.googleapis.com/CreateFulfillment"),
                     }
                 );
@@ -722,7 +722,7 @@ public class UnifiedRouterTests
         commandBook.Pages.Add(
             new CommandPage
             {
-                Sequence = 0,
+                Header = new Angzarr.PageHeader { Sequence = 0 },
                 Command = new Any
                 {
                     TypeUrl = $"type.googleapis.com/{commandType}",
@@ -761,7 +761,7 @@ public class UnifiedRouterTests
         eventBook.Pages.Add(
             new EventPage
             {
-                Sequence = 1,
+                Header = new Angzarr.PageHeader { Sequence = 1 },
                 Event = new Any
                 {
                     TypeUrl = $"type.googleapis.com/{eventType}",
@@ -776,13 +776,22 @@ public class UnifiedRouterTests
     {
         var rejectedCommand = new CommandBook { Cover = new Cover { Domain = domain } };
         rejectedCommand.Pages.Add(
-            new CommandPage { Command = new Any { TypeUrl = $"type.googleapis.com/{commandType}" } }
+            new CommandPage
+            {
+                Header = new PageHeader
+                {
+                    AngzarrDeferred = new AngzarrDeferredSequence
+                    {
+                        Source = new Cover { Domain = "test-saga" },
+                        SourceSeq = 1,
+                    },
+                },
+                Command = new Any { TypeUrl = $"type.googleapis.com/{commandType}" },
+            }
         );
 
         var rejection = new RejectionNotification
         {
-            IssuerName = "test-saga",
-            IssuerType = "saga",
             RejectionReason = reason,
             RejectedCommand = rejectedCommand,
         };
