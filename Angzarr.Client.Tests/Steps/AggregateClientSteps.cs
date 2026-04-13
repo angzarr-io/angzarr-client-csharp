@@ -634,6 +634,7 @@ public class AggregateClientSteps
                 Domain = domain,
                 Root = Helpers.UuidToProto(Guid.NewGuid()),
             },
+            NextSequence = (uint)seq,
         };
         for (int i = 0; i < seq; i++)
         {

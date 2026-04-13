@@ -300,7 +300,7 @@ public class RouterSteps
         {
             AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
             {
-                Source = new Angzarr.Cover { Domain = sagaName },
+                Source = new Angzarr.Cover { Domain = domain },
                 SourceSeq = (uint)seq,
             },
         };
