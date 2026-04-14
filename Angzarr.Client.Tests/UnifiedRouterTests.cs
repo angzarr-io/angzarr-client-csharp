@@ -77,18 +77,6 @@ public class UnifiedRouterTests
     {
         public IReadOnlyList<string> EventTypes() => new[] { "OrderCompleted", "OrderCancelled" };
 
-        public IReadOnlyList<Cover> Prepare(EventBook source, Any eventPayload)
-        {
-            if (eventPayload.TypeUrl.EndsWith("OrderCompleted"))
-            {
-                return new[]
-                {
-                    new Cover { Domain = "fulfillment", Root = source.Cover?.Root },
-                };
-            }
-            return Array.Empty<Cover>();
-        }
-
         public SagaHandlerResponse Execute(
             EventBook source,
             Any eventPayload,
@@ -346,7 +334,7 @@ public class UnifiedRouterTests
     public void SagaRouter_Creation_SetsNameAndDomain()
     {
         var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
+        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", "fulfillment", handler);
 
         router.Name.Should().Be("saga-order-fulfillment");
         router.InputDomain.Should().Be("order");
@@ -356,7 +344,7 @@ public class UnifiedRouterTests
     public void SagaRouter_EventTypes_ReturnsHandlerTypes()
     {
         var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
+        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", "fulfillment", handler);
 
         var types = router.EventTypes();
 
@@ -368,7 +356,7 @@ public class UnifiedRouterTests
     public void SagaRouter_Subscriptions_ReturnsDomainWithTypes()
     {
         var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
+        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", "fulfillment", handler);
 
         var subs = router.Subscriptions();
 
@@ -378,35 +366,10 @@ public class UnifiedRouterTests
     }
 
     [Fact]
-    public void SagaRouter_PrepareDestinations_ReturnsCovers()
-    {
-        var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
-
-        var source = CreateEventBook("order", "OrderCompleted");
-
-        var destinations = router.PrepareDestinations(source);
-
-        destinations.Should().HaveCount(1);
-        destinations[0].Domain.Should().Be("fulfillment");
-    }
-
-    [Fact]
-    public void SagaRouter_PrepareDestinations_NullSource_ReturnsEmpty()
-    {
-        var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
-
-        var destinations = router.PrepareDestinations(null);
-
-        destinations.Should().BeEmpty();
-    }
-
-    [Fact]
     public void SagaRouter_Dispatch_ReturnsCommands()
     {
         var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
+        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", "fulfillment", handler);
 
         var source = CreateEventBook("order", "OrderCompleted");
 
@@ -420,7 +383,7 @@ public class UnifiedRouterTests
     public void SagaRouter_Dispatch_EmptySource_Throws()
     {
         var handler = new OrderSagaHandler();
-        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", handler);
+        var router = new SagaRouter<OrderSagaHandler>("saga-order-fulfillment", "order", "fulfillment", handler);
 
         var source = new EventBook();
 
