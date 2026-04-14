@@ -298,6 +298,27 @@ public class UnifiedRouterTests
     }
 
     [Fact]
+    public void CommandHandlerDomainHandler_HandleFact_DefaultIsPassThrough()
+    {
+        var handler = new PlayerHandler();
+        var facts = new EventBook();
+        facts.Pages.Add(
+            new EventPage
+            {
+                Header = new PageHeader { Sequence = 1 },
+                Event = Any.Pack(new Empty()),
+            }
+        );
+        var state = new PlayerState();
+
+        // Default HandleFact returns facts unchanged
+        var result = ((ICommandHandlerDomainHandler<PlayerState>)handler).HandleFact(facts, state);
+
+        result.Should().BeSameAs(facts);
+        result.Pages.Should().HaveCount(1);
+    }
+
+    [Fact]
     public void CommandHandlerRouter_Dispatch_Notification_ReturnsRevocation()
     {
         var handler = new PlayerHandler();
