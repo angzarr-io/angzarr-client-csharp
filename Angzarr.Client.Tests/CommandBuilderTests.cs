@@ -119,7 +119,9 @@ public class CommandBuilderTests
         // When I build a command with a protobuf message
         var typeUrl = "type.googleapis.com/google.protobuf.Empty";
 
-        var builder = new CommandBuilder(null!, "test").WithCommand(typeUrl, TestMessage);
+        var builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
+            .WithCommand(typeUrl, TestMessage);
 
         var command = builder.Build();
 

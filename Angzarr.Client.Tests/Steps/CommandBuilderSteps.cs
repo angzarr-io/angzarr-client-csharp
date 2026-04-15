@@ -382,10 +382,9 @@ public class CommandBuilderSteps
     [When(@"I use the builder to execute directly:")]
     public void WhenIUseTheBuilderToExecuteDirectly(string _)
     {
-        _builder = new CommandBuilder(null!, "orders", Guid.NewGuid()).WithCommand(
-            "type.googleapis.com/CreateOrder",
-            _testPayload
-        );
+        _builder = new CommandBuilder(null!, "orders", Guid.NewGuid())
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/CreateOrder", _testPayload);
         _command = _builder.Build();
     }
 
@@ -404,14 +403,12 @@ public class CommandBuilderSteps
     [When(@"I create two commands with different roots")]
     public void WhenICreateTwoCommandsWithDifferentRoots()
     {
-        var builder1 = new CommandBuilder(null!, "test", Guid.NewGuid()).WithCommand(
-            "type.googleapis.com/test.Command",
-            _testPayload
-        );
-        var builder2 = new CommandBuilder(null!, "test", Guid.NewGuid()).WithCommand(
-            "type.googleapis.com/test.Command",
-            _testPayload
-        );
+        var builder1 = new CommandBuilder(null!, "test", Guid.NewGuid())
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.Command", _testPayload);
+        var builder2 = new CommandBuilder(null!, "test", Guid.NewGuid())
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.Command", _testPayload);
 
         _ctx["command1"] = builder1.Build();
         _ctx["command2"] = builder2.Build();
@@ -429,10 +426,9 @@ public class CommandBuilderSteps
     [When(@"I build and execute a command for domain ""(.*)""")]
     public void WhenIBuildAndExecuteACommandForDomain(string domain)
     {
-        _builder = new CommandBuilder(null!, domain).WithCommand(
-            "type.googleapis.com/test.Command",
-            _testPayload
-        );
+        _builder = new CommandBuilder(null!, domain)
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.Command", _testPayload);
         _command = _builder.Build();
         // Simulate execution by creating a mock response and sharing via context
         var response = new Angzarr.BusinessResponse { Events = new Angzarr.EventBook() };
