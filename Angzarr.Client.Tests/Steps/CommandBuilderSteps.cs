@@ -14,6 +14,7 @@ public class CommandBuilderSteps
     private CommandBuilder? _builder;
     private Angzarr.CommandBook? _command;
     private Exception? _error;
+    private bool _sequenceSet;
     private readonly Empty _testPayload = new Empty();
 
     public CommandBuilderSteps(ScenarioContext ctx) => _ctx = ctx;
@@ -89,6 +90,7 @@ public class CommandBuilderSteps
     public void WhenSetSequence(int sequence)
     {
         _builder!.WithSequence(sequence);
+        _sequenceSet = true;
     }
 
     [When(@"I do NOT set the command type")]
@@ -131,8 +133,10 @@ public class CommandBuilderSteps
             _ => Angzarr.MergeStrategy.MergeCommutative,
         };
         _builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
             .WithMergeStrategy(mergeStrategy)
             .WithCommand("type.googleapis.com/test.TestCommand", _testPayload);
+        _sequenceSet = true;
     }
 
     [Then(@"the built command should have domain ""(.*)""")]
@@ -285,7 +289,13 @@ public class CommandBuilderSteps
 
     private void BuildCommand()
     {
-        _command ??= _builder!.Build();
+        if (_command == null)
+        {
+            // Ensure sequence is set for scenarios that don't explicitly test it
+            if (!_sequenceSet)
+                _builder!.WithSequence(0);
+            _command = _builder!.Build();
+        }
     }
 
     // Additional command builder step definitions
