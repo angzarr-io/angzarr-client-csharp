@@ -14,13 +14,11 @@ namespace Angzarr.Client.Router;
 /// var router = new SagaRouter&lt;OrderSagaHandler&gt;(
 ///     "saga-order-fulfillment",
 ///     "order",
+///     "fulfillment",
 ///     new OrderSagaHandler()
 /// );
 ///
-/// // Phase 1: Get destinations needed
-/// var destinations = router.PrepareDestinations(sourceEventBook);
-///
-/// // Phase 2: Execute with fetched destinations
+/// // Dispatch with fetched destinations
 /// var response = router.Dispatch(sourceEventBook, fetchedDestinations);
 /// </code>
 /// </summary>
@@ -30,6 +28,7 @@ public class SagaRouter<THandler>
 {
     private readonly string _name;
     private readonly string _domain;
+    private readonly string _targetDomain;
     private readonly THandler _handler;
 
     /// <summary>
@@ -39,11 +38,13 @@ public class SagaRouter<THandler>
     /// </summary>
     /// <param name="name">Component name.</param>
     /// <param name="domain">Input domain this saga listens to.</param>
+    /// <param name="targetDomain">Target domain where commands are sent.</param>
     /// <param name="handler">Handler implementation.</param>
-    public SagaRouter(string name, string domain, THandler handler)
+    public SagaRouter(string name, string domain, string targetDomain, THandler handler)
     {
         _name = name;
         _domain = domain;
+        _targetDomain = targetDomain;
         _handler = handler;
     }
 
@@ -58,6 +59,11 @@ public class SagaRouter<THandler>
     public string InputDomain => _domain;
 
     /// <summary>
+    /// Get the target domain (where commands are sent).
+    /// </summary>
+    public string TargetDomain => _targetDomain;
+
+    /// <summary>
     /// Get event types from the handler.
     /// </summary>
     public IReadOnlyList<string> EventTypes() => _handler.EventTypes();
@@ -69,24 +75,6 @@ public class SagaRouter<THandler>
     public IReadOnlyList<(string Domain, IReadOnlyList<string> Types)> Subscriptions()
     {
         return new[] { (_domain, _handler.EventTypes()) };
-    }
-
-    /// <summary>
-    /// Get destinations needed for the given source events.
-    /// </summary>
-    /// <param name="source">Source event book, may be null.</param>
-    /// <returns>List of covers identifying needed destination aggregates.</returns>
-    public IReadOnlyList<Angzarr.Cover> PrepareDestinations(Angzarr.EventBook? source)
-    {
-        if (source == null || source.Pages.Count == 0)
-            return Array.Empty<Angzarr.Cover>();
-
-        var eventPage = source.Pages[^1]; // Last page
-        var eventAny = eventPage.Event;
-        if (eventAny == null)
-            return Array.Empty<Angzarr.Cover>();
-
-        return _handler.Prepare(source, eventAny);
     }
 
     /// <summary>

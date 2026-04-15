@@ -42,10 +42,9 @@ public class CommandBuilderTests
     public void Build_WithoutCorrelationId_ShouldAutoGenerateOne()
     {
         // When I build a command without specifying correlation_id
-        var builder = new CommandBuilder(null!, "test").WithCommand(
-            "type.googleapis.com/test.TestCommand",
-            TestMessage
-        );
+        var builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.TestCommand", TestMessage);
 
         var command = builder.Build();
 
@@ -58,30 +57,40 @@ public class CommandBuilderTests
     public void Build_ForNewAggregate_ShouldHaveNoRootUUID()
     {
         // When I build a command for domain "test" without specifying root
-        var builder = new CommandBuilder(null!, "test").WithCommand(
-            "type.googleapis.com/test.TestCommand",
-            TestMessage
-        );
+        var builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.TestCommand", TestMessage);
 
         var command = builder.Build();
 
         // Then the resulting CommandBook should have no root UUID
-        // In protobuf C#, check if Root is the default instance
         command.Cover.Root.Should().BeNull();
     }
 
     [Fact]
-    public void Build_WithoutSequence_ShouldDefaultToZero()
+    public void Build_WithoutSequence_ShouldThrow()
     {
-        // When I build a command without specifying sequence
+        // When I build a command without calling WithSequence
         var builder = new CommandBuilder(null!, "test").WithCommand(
             "type.googleapis.com/test.TestCommand",
             TestMessage
         );
 
+        // Then build should throw
+        var act = () => builder.Build();
+        act.Should().Throw<InvalidArgumentError>();
+    }
+
+    [Fact]
+    public void Build_WithSequenceZero_ShouldSucceed()
+    {
+        // When I explicitly set sequence to 0 (valid for new aggregates)
+        var builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.TestCommand", TestMessage);
+
         var command = builder.Build();
 
-        // Then the resulting CommandBook should have sequence 0
         Helpers.SequenceNum(command.Pages[0]).Should().Be(0u);
     }
 
@@ -110,7 +119,9 @@ public class CommandBuilderTests
         // When I build a command with a protobuf message
         var typeUrl = "type.googleapis.com/google.protobuf.Empty";
 
-        var builder = new CommandBuilder(null!, "test").WithCommand(typeUrl, TestMessage);
+        var builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
+            .WithCommand(typeUrl, TestMessage);
 
         var command = builder.Build();
 

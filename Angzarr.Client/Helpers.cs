@@ -77,11 +77,14 @@ public static class Helpers
     }
 
     /// <summary>
-    /// Get the edition from an EventBook.
+    /// Get the edition from an EventBook, or null if not set.
     /// </summary>
     public static Angzarr.Edition? Edition(Angzarr.EventBook book)
     {
-        return book.Cover?.Edition;
+        var edition = book.Cover?.Edition;
+        if (edition == null || string.IsNullOrEmpty(edition.Name))
+            return null;
+        return edition;
     }
 
     /// <summary>
