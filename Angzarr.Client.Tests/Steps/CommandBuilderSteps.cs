@@ -112,6 +112,7 @@ public class CommandBuilderSteps
             .WithCorrelationId("trace-456")
             .WithSequence(3)
             .WithCommand("type.googleapis.com/CreateOrder", _testPayload);
+        _sequenceSet = true;
     }
 
     [When(@"I build a command without specifying merge strategy")]
