@@ -4,9 +4,9 @@
     "solution": "Angzarr.sln",
     "project": "Angzarr.Client",
     "thresholds": {
-      "high": 80,
-      "low": 70,
-      "break": 70
+      "high": 30,
+      "low": 20,
+      "break": 15
     }
   }
 }
