@@ -65,7 +65,7 @@ public abstract class Projector
                 var attr = method.GetCustomAttribute<ProjectsAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     dispatch[suffix] = (method, attr.EventType);
                 }
             }
@@ -103,7 +103,7 @@ public abstract class Projector
         var dispatchTable = _dispatchTables[GetType()];
         foreach (var (suffix, (method, eventType)) in dispatchTable)
         {
-            if (eventAny.TypeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);

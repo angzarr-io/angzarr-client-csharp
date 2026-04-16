@@ -80,7 +80,7 @@ public class UnifiedRouterTests
         public SagaHandlerResponse Execute(
             EventBook source,
             Any eventPayload,
-            IReadOnlyList<EventBook> destinations
+            Destinations destinations
         )
         {
             if (eventPayload.TypeUrl.EndsWith("OrderCompleted"))
@@ -130,7 +130,7 @@ public class UnifiedRouterTests
             EventBook trigger,
             HandFlowState state,
             Any eventPayload,
-            IReadOnlyList<EventBook> destinations
+            Destinations destinations
         )
         {
             var response = new ProcessManagerResponse();
@@ -169,7 +169,7 @@ public class UnifiedRouterTests
             EventBook trigger,
             HandFlowState state,
             Any eventPayload,
-            IReadOnlyList<EventBook> destinations
+            Destinations destinations
         )
         {
             return new ProcessManagerResponse();

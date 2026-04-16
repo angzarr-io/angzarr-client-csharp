@@ -80,7 +80,7 @@ public class RouterSteps
         {
             try
             {
-                _sagaResponse = _sagaRouter.Dispatch(_eventBook, new List<Angzarr.EventBook>());
+                _sagaResponse = _sagaRouter.Dispatch(_eventBook, new Destinations(new Dictionary<string, uint>()));
                 _commands = _sagaResponse.Commands.ToList();
             }
             catch (Exception e)
@@ -372,7 +372,7 @@ public class RouterSteps
     {
         if (_sagaRouter != null && _eventBook != null)
         {
-            _sagaResponse = _sagaRouter.Dispatch(_eventBook, new List<Angzarr.EventBook>());
+            _sagaResponse = _sagaRouter.Dispatch(_eventBook, new Destinations(new Dictionary<string, uint>()));
             _commands = _sagaResponse.Commands.ToList();
         }
         else
@@ -711,7 +711,7 @@ public class TestSagaHandler : ISagaDomainHandler
     public SagaHandlerResponse Execute(
         Angzarr.EventBook source,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         // Return empty response for basic tests
@@ -746,7 +746,7 @@ public class TestPMHandler : IProcessManagerDomainHandler<TestPMState>
         Angzarr.EventBook trigger,
         TestPMState state,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         return new ProcessManagerResponse();

@@ -30,7 +30,7 @@ namespace Angzarr.Client.Router;
 ///         Angzarr.EventBook trigger,
 ///         HandFlowState state,
 ///         Any eventPayload,
-///         IReadOnlyList&lt;Angzarr.EventBook&gt; destinations)
+///         Destinations destinations)
 ///     {
 ///         // Process event, emit commands and/or PM events
 ///         return new ProcessManagerResponse();
@@ -61,13 +61,13 @@ public interface IProcessManagerDomainHandler<TState>
     /// <param name="trigger">The triggering event book.</param>
     /// <param name="state">Current PM state.</param>
     /// <param name="eventPayload">The event payload as Any.</param>
-    /// <param name="destinations">Fetched destination aggregate states.</param>
+    /// <param name="destinations">Destination sequences for command stamping.</param>
     /// <returns>Response containing commands and/or PM events.</returns>
     ProcessManagerResponse Handle(
         Angzarr.EventBook trigger,
         TState state,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     );
 
     /// <summary>

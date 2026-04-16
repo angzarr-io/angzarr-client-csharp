@@ -81,11 +81,11 @@ public class SagaRouter<THandler>
     /// Dispatch an event to the saga handler.
     /// </summary>
     /// <param name="source">Source event book.</param>
-    /// <param name="destinations">Fetched destination aggregate states.</param>
+    /// <param name="destinations">Destination sequences for command stamping.</param>
     /// <returns>Saga response with commands and events.</returns>
     public Angzarr.SagaResponse Dispatch(
         Angzarr.EventBook source,
-        IReadOnlyList<Angzarr.EventBook>? destinations = null
+        Destinations? destinations = null
     )
     {
         if (source.Pages.Count == 0)
@@ -97,13 +97,13 @@ public class SagaRouter<THandler>
             throw new InvalidArgumentError("Missing event payload");
 
         // Check for Notification
-        if (eventAny.TypeUrl.EndsWith("Notification"))
+        if (Helpers.TypeUrlMatches(eventAny.TypeUrl, "angzarr.Notification"))
             return DispatchNotification(eventAny);
 
         var handlerResponse = _handler.Execute(
             source,
             eventAny,
-            destinations ?? Array.Empty<Angzarr.EventBook>()
+            destinations ?? new Destinations(new Dictionary<string, uint>())
         );
 
         var response = new Angzarr.SagaResponse();

@@ -35,17 +35,20 @@ public sealed class DomainClient : IDisposable
 {
     private readonly CommandHandlerClient _commandHandler;
     private readonly QueryClient _query;
+    private readonly SpeculativeClient _speculative;
     private readonly GrpcChannel? _channel;
 
     private DomainClient(
         GrpcChannel? channel,
         CommandHandlerClient commandHandler,
-        QueryClient query
+        QueryClient query,
+        SpeculativeClient speculative
     )
     {
         _channel = channel;
         _commandHandler = commandHandler;
         _query = query;
+        _speculative = speculative;
     }
 
     /// <summary>
@@ -63,7 +66,8 @@ public sealed class DomainClient : IDisposable
             return new DomainClient(
                 channel,
                 CommandHandlerClient.FromChannel(channel),
-                QueryClient.FromChannel(channel)
+                QueryClient.FromChannel(channel),
+                SpeculativeClient.FromChannel(channel)
             );
         }
         catch (Exception e)
@@ -96,7 +100,8 @@ public sealed class DomainClient : IDisposable
         return new DomainClient(
             null, // Don't own the channel
             CommandHandlerClient.FromChannel(channel),
-            QueryClient.FromChannel(channel)
+            QueryClient.FromChannel(channel),
+            SpeculativeClient.FromChannel(channel)
         );
     }
 
@@ -109,6 +114,11 @@ public sealed class DomainClient : IDisposable
     /// Get the query client for direct access.
     /// </summary>
     public QueryClient Query => _query;
+
+    /// <summary>
+    /// Get the speculative client for what-if scenarios.
+    /// </summary>
+    public SpeculativeClient Speculative => _speculative;
 
     /// <summary>
     /// Execute a command asynchronously (fire-and-forget).
@@ -185,6 +195,7 @@ public sealed class DomainClient : IDisposable
     {
         _commandHandler.Dispose();
         _query.Dispose();
+        _speculative.Dispose();
 
         if (_channel != null)
         {

@@ -33,9 +33,9 @@ namespace Angzarr.Client.Router;
 ///         PlayerState state,
 ///         int seq)
 ///     {
-///         if (payload.TypeUrl.EndsWith("RegisterPlayer"))
+///         if (Helpers.TypeUrlMatches(payload.TypeUrl, "examples.player.RegisterPlayer"))
 ///             return HandleRegister(cmd, payload, state, seq);
-///         if (payload.TypeUrl.EndsWith("DepositFunds"))
+///         if (Helpers.TypeUrlMatches(payload.TypeUrl, "examples.player.DepositFunds"))
 ///             return HandleDeposit(cmd, payload, state, seq);
 ///         throw new CommandRejectedError($"Unknown command: {payload.TypeUrl}");
 ///     }

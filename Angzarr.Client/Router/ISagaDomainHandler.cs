@@ -18,9 +18,9 @@ namespace Angzarr.Client.Router;
 ///     public SagaHandlerResponse Execute(
 ///         Angzarr.EventBook source,
 ///         Any eventPayload,
-///         IReadOnlyList&lt;Angzarr.EventBook&gt; destinations)
+///         Destinations destinations)
 ///     {
-///         if (eventPayload.TypeUrl.EndsWith("OrderCompleted"))
+///         if (Helpers.TypeUrlMatches(eventPayload.TypeUrl, "examples.order.OrderCompleted"))
 ///             return HandleOrderCompleted(source, eventPayload, destinations);
 ///         return SagaHandlerResponse.Empty();
 ///     }
@@ -41,12 +41,12 @@ public interface ISagaDomainHandler
     /// </summary>
     /// <param name="source">Source event book.</param>
     /// <param name="eventPayload">The event payload as Any.</param>
-    /// <param name="destinations">Fetched destination aggregate states.</param>
+    /// <param name="destinations">Destination sequences for command stamping.</param>
     /// <returns>Response containing commands and events.</returns>
     SagaHandlerResponse Execute(
         Angzarr.EventBook source,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     );
 
     /// <summary>

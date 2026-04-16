@@ -338,7 +338,7 @@ public class AggregateClientSteps
         // Use whichever router is available
         if (_sagaRouter != null)
         {
-            _sagaRouter.Dispatch(eventBook, new List<Angzarr.EventBook>());
+            _sagaRouter.Dispatch(eventBook, new Destinations(new Dictionary<string, uint>()));
         }
         else if (_projectorRouter != null)
         {
@@ -1733,7 +1733,7 @@ public class FlexibleSagaHandler : ISagaDomainHandler
         string,
         Angzarr.EventBook,
         Any,
-        IReadOnlyList<Angzarr.EventBook>,
+        Destinations,
         IReadOnlyList<Angzarr.CommandBook>
     > _dispatch;
 
@@ -1743,7 +1743,7 @@ public class FlexibleSagaHandler : ISagaDomainHandler
             string,
             Angzarr.EventBook,
             Any,
-            IReadOnlyList<Angzarr.EventBook>,
+            Destinations,
             IReadOnlyList<Angzarr.CommandBook>
         > dispatch
     )
@@ -1757,7 +1757,7 @@ public class FlexibleSagaHandler : ISagaDomainHandler
     public SagaHandlerResponse Execute(
         Angzarr.EventBook source,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         var typeUrl = eventPayload.TypeUrl;
@@ -1817,7 +1817,7 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
         Angzarr.EventBook,
         TestPMState,
         Any,
-        IReadOnlyList<Angzarr.EventBook>,
+        Destinations,
         ProcessManagerResponse
     > _dispatch;
 
@@ -1828,7 +1828,7 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
             Angzarr.EventBook,
             TestPMState,
             Any,
-            IReadOnlyList<Angzarr.EventBook>,
+            Destinations,
             ProcessManagerResponse
         > dispatch
     )
@@ -1852,7 +1852,7 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
         Angzarr.EventBook trigger,
         TestPMState state,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         var typeUrl = eventPayload.TypeUrl;

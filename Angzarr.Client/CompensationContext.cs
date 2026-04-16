@@ -39,11 +39,13 @@ public class CompensationContext
     /// <summary>
     /// Name of the saga/PM that issued the rejected command.
     /// </summary>
+    [Obsolete("Use SourceAggregate?.Domain instead. IssuerName is not available in other language clients.")]
     public string IssuerName { get; init; } = "";
 
     /// <summary>
     /// Type of issuer: "saga" or "process_manager".
     /// </summary>
+    [Obsolete("IssuerType is no longer available from the proto. Use SourceAggregate instead.")]
     public string IssuerType { get; init; } = "";
 
     /// <summary>

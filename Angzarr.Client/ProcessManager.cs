@@ -84,7 +84,7 @@ public abstract class ProcessManager<TState>
                 var attr = method.GetCustomAttribute<HandlesAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     dispatch[suffix] = (
                         method,
                         attr.EventType,
@@ -118,7 +118,7 @@ public abstract class ProcessManager<TState>
                 var attr = method.GetCustomAttribute<PreparesAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     prepares[suffix] = (method, attr.EventType);
                 }
             }
@@ -196,7 +196,7 @@ public abstract class ProcessManager<TState>
         var prepareTable = _prepareTables[GetType()];
         foreach (var (suffix, (method, eventType)) in prepareTable)
         {
-            if (eventAny.TypeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);
@@ -220,7 +220,7 @@ public abstract class ProcessManager<TState>
         var dispatchTable = _dispatchTables[GetType()];
         foreach (var (suffix, (method, eventType, _, outputDomain)) in dispatchTable)
         {
-            if (eventAny.TypeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);
@@ -267,7 +267,7 @@ public abstract class ProcessManager<TState>
         foreach (var (key, method) in rejectionTable)
         {
             var parts = key.Split('/');
-            if (parts[0] == domain && commandSuffix.EndsWith(parts[1]))
+            if (parts[0] == domain && commandSuffix == parts[1])
             {
                 _ = State; // Ensure state is built
                 var result = method.Invoke(this, new object[] { notification });
