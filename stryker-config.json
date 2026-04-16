@@ -2,8 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
   "stryker-config": {
     "solution": "Angzarr.sln",
-    "project": "Angzarr.Client.csproj",
-    "test-projects": ["./Angzarr.Client.Tests/Angzarr.Client.Tests.csproj"],
+    "project": "Angzarr.Client",
     "thresholds": {
       "high": 80,
       "low": 70,
