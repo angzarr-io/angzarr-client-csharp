@@ -54,6 +54,9 @@ serve:
 coverage:
     just _container coverage
 
+mutation-test:
+    just _container mutation-test
+
 pack:
     just _container pack
 
@@ -62,3 +65,11 @@ publish:
 
 clean:
     rm -rf "{{ROOT}}/Angzarr.Client/bin" "{{ROOT}}/Angzarr.Client/obj"
+
+# Check formatting
+fmt:
+    just _container fmt
+
+# Auto-format code
+fmt-fix:
+    just _container fmt-fix

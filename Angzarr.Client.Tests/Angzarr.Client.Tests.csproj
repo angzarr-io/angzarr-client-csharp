@@ -26,10 +26,10 @@
     <!-- Include feature files from shared location for Reqnroll code generation -->
     <ItemGroup>
         <ReqnrollFeatureFiles
-            Include="..\angzarr-core\features\client\*.feature"
+            Include="..\angzarr-project\features\client\*.feature"
             Link="Features\%(Filename)%(Extension)"
         >
-            <CodeBehindFile>..\angzarr-core\features\client\%(Filename).feature.cs</CodeBehindFile>
+            <CodeBehindFile>..\angzarr-project\features\client\%(Filename).feature.cs</CodeBehindFile>
             <Visible>true</Visible>
         </ReqnrollFeatureFiles>
     </ItemGroup>
@@ -37,7 +37,7 @@
     <!-- Copy feature files to output for runtime discovery -->
     <ItemGroup>
         <None
-            Include="..\angzarr-core\features\client\*.feature"
+            Include="..\angzarr-project\features\client\*.feature"
             Link="Features\%(Filename)%(Extension)"
             CopyToOutputDirectory="PreserveNewest"
         />

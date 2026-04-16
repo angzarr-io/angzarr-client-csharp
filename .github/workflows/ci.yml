@@ -25,8 +25,20 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+
       - name: Build
         run: just -f justfile.container build
 
       - name: Test
         run: just -f justfile.container test
+
+      - name: Format check
+        run: just -f justfile.container fmt
+
+      - name: Mutation Testing (Stryker.NET)
+        run: just -f justfile.container mutation-test
