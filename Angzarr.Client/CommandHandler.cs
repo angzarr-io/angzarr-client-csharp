@@ -71,7 +71,7 @@ public abstract class CommandHandler<TState>
                 var attr = method.GetCustomAttribute<HandlesAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     dispatch[suffix] = (method, attr.EventType);
                 }
             }
@@ -88,7 +88,7 @@ public abstract class CommandHandler<TState>
                 var attr = method.GetCustomAttribute<AppliesAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     appliers[suffix] = (method, attr.EventType);
                 }
             }
@@ -128,7 +128,7 @@ public abstract class CommandHandler<TState>
         var commandAny = request.Command.Pages[0].Command;
 
         // Check for Notification (rejection/compensation)
-        if (commandAny.TypeUrl.EndsWith("Notification"))
+        if (Helpers.TypeUrlMatches(commandAny.TypeUrl, "angzarr.Notification"))
         {
             var notification = commandAny.Unpack<Angzarr.Notification>();
             return handler.HandleRevocation(notification);
@@ -148,7 +148,7 @@ public abstract class CommandHandler<TState>
 
         foreach (var (suffix, (method, cmdType)) in dispatchTable)
         {
-            if (typeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(typeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(cmdType);
                 var cmd = unpackMethod.Invoke(commandAny, null);
@@ -182,7 +182,7 @@ public abstract class CommandHandler<TState>
         foreach (var (key, method) in rejectionTable)
         {
             var parts = key.Split('/');
-            if (parts[0] == domain && commandSuffix.EndsWith(parts[1]))
+            if (parts[0] == domain && commandSuffix == parts[1])
             {
                 _ = State; // Ensure state is built
                 var result = method.Invoke(this, new object[] { notification });
@@ -283,7 +283,7 @@ public abstract class CommandHandler<TState>
         var applierTable = _applierTables[GetType()];
         foreach (var (suffix, (method, eventType)) in applierTable)
         {
-            if (eventAny.TypeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);
@@ -316,7 +316,7 @@ public abstract class CommandHandler<TState>
 
         foreach (var (suffix, (method, cmdType)) in dispatchTable)
         {
-            if (typeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(typeUrl, suffix))
             {
                 _ = State; // Ensure state is built
                 var result = method.Invoke(this, new[] { command });

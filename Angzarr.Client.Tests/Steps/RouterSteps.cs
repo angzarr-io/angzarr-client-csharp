@@ -69,7 +69,7 @@ public class RouterSteps
         _registeredEventTypes.Add(eventType);
         // Create the saga router with the registered event types
         var handler = new TestSagaHandler(_registeredEventTypes.ToArray());
-        _sagaRouter = new SagaRouter<TestSagaHandler>("test-saga", _currentDomain, handler);
+        _sagaRouter = new SagaRouter<TestSagaHandler>("test-saga", _currentDomain, "target", handler);
     }
 
     [When(@"I dispatch an EventBook with event ""(.*)"" from domain ""(.*)""")]
@@ -80,7 +80,7 @@ public class RouterSteps
         {
             try
             {
-                _sagaResponse = _sagaRouter.Dispatch(_eventBook, new List<Angzarr.EventBook>());
+                _sagaResponse = _sagaRouter.Dispatch(_eventBook, new Destinations(new Dictionary<string, uint>()));
                 _commands = _sagaResponse.Commands.ToList();
             }
             catch (Exception e)
@@ -273,14 +273,14 @@ public class RouterSteps
     public void GivenASagaRouterHandlingRejections()
     {
         var handler = new TestSagaHandler(new[] { "TestEvent" });
-        _sagaRouter = new SagaRouter<TestSagaHandler>("rejection-saga", "test", handler);
+        _sagaRouter = new SagaRouter<TestSagaHandler>("rejection-saga", "test", "target", handler);
     }
 
     [Given(@"a saga ""(.*)"" triggered by ""(.*)"" aggregate at sequence (\d+)")]
     public void GivenASagaTriggeredByAggregateAtSequence(string sagaName, string domain, int seq)
     {
         var handler = new TestSagaHandler(new[] { "TestEvent" });
-        _sagaRouter = new SagaRouter<TestSagaHandler>(sagaName, domain, handler);
+        _sagaRouter = new SagaRouter<TestSagaHandler>(sagaName, domain, "target", handler);
 
         // Create a rejection notification with saga origin details for compensation tests
         var commandBook = new Angzarr.CommandBook
@@ -372,7 +372,7 @@ public class RouterSteps
     {
         if (_sagaRouter != null && _eventBook != null)
         {
-            _sagaResponse = _sagaRouter.Dispatch(_eventBook, new List<Angzarr.EventBook>());
+            _sagaResponse = _sagaRouter.Dispatch(_eventBook, new Destinations(new Dictionary<string, uint>()));
             _commands = _sagaResponse.Commands.ToList();
         }
         else
@@ -583,7 +583,7 @@ public class RouterSteps
     public void GivenASagaRouterWithARejectedCommand()
     {
         var handler = new TestSagaHandler(new[] { "TestEvent" });
-        _sagaRouter = new SagaRouter<TestSagaHandler>("rejection-saga", "test", handler);
+        _sagaRouter = new SagaRouter<TestSagaHandler>("rejection-saga", "test", "target", handler);
         _rejection = new Angzarr.RevocationResponse
         {
             Reason = "Command rejected by target aggregate",
@@ -708,16 +708,10 @@ public class TestSagaHandler : ISagaDomainHandler
 
     public IReadOnlyList<string> EventTypes() => _eventTypes;
 
-    public IReadOnlyList<Angzarr.Cover> Prepare(Angzarr.EventBook source, Any eventPayload)
-    {
-        // Return empty list - no destination fetching needed for tests
-        return new List<Angzarr.Cover>();
-    }
-
     public SagaHandlerResponse Execute(
         Angzarr.EventBook source,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         // Return empty response for basic tests
@@ -752,7 +746,7 @@ public class TestPMHandler : IProcessManagerDomainHandler<TestPMState>
         Angzarr.EventBook trigger,
         TestPMState state,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         return new ProcessManagerResponse();

@@ -22,6 +22,7 @@ namespace Angzarr.Client;
 /// }
 /// </code>
 /// </summary>
+[Obsolete("Use Destinations instead")]
 public class SagaContext
 {
     private readonly Dictionary<string, Angzarr.EventBook> _destinations;

@@ -14,13 +14,11 @@ namespace Angzarr.Client.Router;
 /// var router = new SagaRouter&lt;OrderSagaHandler&gt;(
 ///     "saga-order-fulfillment",
 ///     "order",
+///     "fulfillment",
 ///     new OrderSagaHandler()
 /// );
 ///
-/// // Phase 1: Get destinations needed
-/// var destinations = router.PrepareDestinations(sourceEventBook);
-///
-/// // Phase 2: Execute with fetched destinations
+/// // Dispatch with fetched destinations
 /// var response = router.Dispatch(sourceEventBook, fetchedDestinations);
 /// </code>
 /// </summary>
@@ -30,6 +28,7 @@ public class SagaRouter<THandler>
 {
     private readonly string _name;
     private readonly string _domain;
+    private readonly string _targetDomain;
     private readonly THandler _handler;
 
     /// <summary>
@@ -39,11 +38,13 @@ public class SagaRouter<THandler>
     /// </summary>
     /// <param name="name">Component name.</param>
     /// <param name="domain">Input domain this saga listens to.</param>
+    /// <param name="targetDomain">Target domain where commands are sent.</param>
     /// <param name="handler">Handler implementation.</param>
-    public SagaRouter(string name, string domain, THandler handler)
+    public SagaRouter(string name, string domain, string targetDomain, THandler handler)
     {
         _name = name;
         _domain = domain;
+        _targetDomain = targetDomain;
         _handler = handler;
     }
 
@@ -56,6 +57,11 @@ public class SagaRouter<THandler>
     /// Get the input domain.
     /// </summary>
     public string InputDomain => _domain;
+
+    /// <summary>
+    /// Get the target domain (where commands are sent).
+    /// </summary>
+    public string TargetDomain => _targetDomain;
 
     /// <summary>
     /// Get event types from the handler.
@@ -72,32 +78,14 @@ public class SagaRouter<THandler>
     }
 
     /// <summary>
-    /// Get destinations needed for the given source events.
-    /// </summary>
-    /// <param name="source">Source event book, may be null.</param>
-    /// <returns>List of covers identifying needed destination aggregates.</returns>
-    public IReadOnlyList<Angzarr.Cover> PrepareDestinations(Angzarr.EventBook? source)
-    {
-        if (source == null || source.Pages.Count == 0)
-            return Array.Empty<Angzarr.Cover>();
-
-        var eventPage = source.Pages[^1]; // Last page
-        var eventAny = eventPage.Event;
-        if (eventAny == null)
-            return Array.Empty<Angzarr.Cover>();
-
-        return _handler.Prepare(source, eventAny);
-    }
-
-    /// <summary>
     /// Dispatch an event to the saga handler.
     /// </summary>
     /// <param name="source">Source event book.</param>
-    /// <param name="destinations">Fetched destination aggregate states.</param>
+    /// <param name="destinations">Destination sequences for command stamping.</param>
     /// <returns>Saga response with commands and events.</returns>
     public Angzarr.SagaResponse Dispatch(
         Angzarr.EventBook source,
-        IReadOnlyList<Angzarr.EventBook>? destinations = null
+        Destinations? destinations = null
     )
     {
         if (source.Pages.Count == 0)
@@ -109,13 +97,13 @@ public class SagaRouter<THandler>
             throw new InvalidArgumentError("Missing event payload");
 
         // Check for Notification
-        if (eventAny.TypeUrl.EndsWith("Notification"))
+        if (Helpers.TypeUrlMatches(eventAny.TypeUrl, "angzarr.Notification"))
             return DispatchNotification(eventAny);
 
         var handlerResponse = _handler.Execute(
             source,
             eventAny,
-            destinations ?? Array.Empty<Angzarr.EventBook>()
+            destinations ?? new Destinations(new Dictionary<string, uint>())
         );
 
         var response = new Angzarr.SagaResponse();

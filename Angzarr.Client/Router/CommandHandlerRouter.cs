@@ -108,7 +108,7 @@ public class CommandHandlerRouter<TState, THandler>
         var typeUrl = commandAny.TypeUrl;
 
         // Check for Notification (rejection/compensation)
-        if (typeUrl.EndsWith("Notification"))
+        if (Helpers.TypeUrlMatches(typeUrl, "angzarr.Notification"))
         {
             return DispatchNotification(commandAny, state);
         }

@@ -14,6 +14,7 @@ public class CommandBuilderSteps
     private CommandBuilder? _builder;
     private Angzarr.CommandBook? _command;
     private Exception? _error;
+    private bool _sequenceSet;
     private readonly Empty _testPayload = new Empty();
 
     public CommandBuilderSteps(ScenarioContext ctx) => _ctx = ctx;
@@ -89,6 +90,7 @@ public class CommandBuilderSteps
     public void WhenSetSequence(int sequence)
     {
         _builder!.WithSequence(sequence);
+        _sequenceSet = true;
     }
 
     [When(@"I do NOT set the command type")]
@@ -110,6 +112,7 @@ public class CommandBuilderSteps
             .WithCorrelationId("trace-456")
             .WithSequence(3)
             .WithCommand("type.googleapis.com/CreateOrder", _testPayload);
+        _sequenceSet = true;
     }
 
     [When(@"I build a command without specifying merge strategy")]
@@ -131,8 +134,10 @@ public class CommandBuilderSteps
             _ => Angzarr.MergeStrategy.MergeCommutative,
         };
         _builder = new CommandBuilder(null!, "test")
+            .WithSequence(0)
             .WithMergeStrategy(mergeStrategy)
             .WithCommand("type.googleapis.com/test.TestCommand", _testPayload);
+        _sequenceSet = true;
     }
 
     [Then(@"the built command should have domain ""(.*)""")]
@@ -285,7 +290,13 @@ public class CommandBuilderSteps
 
     private void BuildCommand()
     {
-        _command ??= _builder!.Build();
+        if (_command == null)
+        {
+            // Ensure sequence is set for scenarios that don't explicitly test it
+            if (!_sequenceSet)
+                _builder!.WithSequence(0);
+            _command = _builder!.Build();
+        }
     }
 
     // Additional command builder step definitions
@@ -372,10 +383,9 @@ public class CommandBuilderSteps
     [When(@"I use the builder to execute directly:")]
     public void WhenIUseTheBuilderToExecuteDirectly(string _)
     {
-        _builder = new CommandBuilder(null!, "orders", Guid.NewGuid()).WithCommand(
-            "type.googleapis.com/CreateOrder",
-            _testPayload
-        );
+        _builder = new CommandBuilder(null!, "orders", Guid.NewGuid())
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/CreateOrder", _testPayload);
         _command = _builder.Build();
     }
 
@@ -394,14 +404,12 @@ public class CommandBuilderSteps
     [When(@"I create two commands with different roots")]
     public void WhenICreateTwoCommandsWithDifferentRoots()
     {
-        var builder1 = new CommandBuilder(null!, "test", Guid.NewGuid()).WithCommand(
-            "type.googleapis.com/test.Command",
-            _testPayload
-        );
-        var builder2 = new CommandBuilder(null!, "test", Guid.NewGuid()).WithCommand(
-            "type.googleapis.com/test.Command",
-            _testPayload
-        );
+        var builder1 = new CommandBuilder(null!, "test", Guid.NewGuid())
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.Command", _testPayload);
+        var builder2 = new CommandBuilder(null!, "test", Guid.NewGuid())
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.Command", _testPayload);
 
         _ctx["command1"] = builder1.Build();
         _ctx["command2"] = builder2.Build();
@@ -419,10 +427,9 @@ public class CommandBuilderSteps
     [When(@"I build and execute a command for domain ""(.*)""")]
     public void WhenIBuildAndExecuteACommandForDomain(string domain)
     {
-        _builder = new CommandBuilder(null!, domain).WithCommand(
-            "type.googleapis.com/test.Command",
-            _testPayload
-        );
+        _builder = new CommandBuilder(null!, domain)
+            .WithSequence(0)
+            .WithCommand("type.googleapis.com/test.Command", _testPayload);
         _command = _builder.Build();
         // Simulate execution by creating a mock response and sharing via context
         var response = new Angzarr.BusinessResponse { Events = new Angzarr.EventBook() };

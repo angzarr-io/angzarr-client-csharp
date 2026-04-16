@@ -33,9 +33,9 @@ namespace Angzarr.Client.Router;
 ///         PlayerState state,
 ///         int seq)
 ///     {
-///         if (payload.TypeUrl.EndsWith("RegisterPlayer"))
+///         if (Helpers.TypeUrlMatches(payload.TypeUrl, "examples.player.RegisterPlayer"))
 ///             return HandleRegister(cmd, payload, state, seq);
-///         if (payload.TypeUrl.EndsWith("DepositFunds"))
+///         if (Helpers.TypeUrlMatches(payload.TypeUrl, "examples.player.DepositFunds"))
 ///             return HandleDeposit(cmd, payload, state, seq);
 ///         throw new CommandRejectedError($"Unknown command: {payload.TypeUrl}");
 ///     }
@@ -76,6 +76,13 @@ public interface ICommandHandlerDomainHandler<TState>
     /// <param name="seq">Next sequence number for events.</param>
     /// <returns>EventBook containing resulting events.</returns>
     Angzarr.EventBook Handle(Angzarr.CommandBook cmd, Any payload, TState state, int seq);
+
+    /// <summary>
+    /// Handle injected facts and return the resulting EventBook.
+    /// Facts are always accepted (cannot be rejected). Override to emit
+    /// additional events or augment facts. Default: pass-through.
+    /// </summary>
+    Angzarr.EventBook HandleFact(Angzarr.EventBook facts, TState state) => facts;
 
     /// <summary>
     /// Handle a rejection notification.

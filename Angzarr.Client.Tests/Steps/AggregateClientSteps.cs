@@ -314,7 +314,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", "target", handler);
     }
 
     [Given(@"a saga router")]
@@ -328,7 +328,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", "target", handler);
     }
 
     [When(@"I receive an ""(.*)"" event")]
@@ -338,7 +338,7 @@ public class AggregateClientSteps
         // Use whichever router is available
         if (_sagaRouter != null)
         {
-            _sagaRouter.Dispatch(eventBook, new List<Angzarr.EventBook>());
+            _sagaRouter.Dispatch(eventBook, new Destinations(new Dictionary<string, uint>()));
         }
         else if (_projectorRouter != null)
         {
@@ -452,7 +452,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", "target", handler);
     }
 
     [When(@"I register handler for type ""(.*)""")]
@@ -467,7 +467,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", "target", handler);
     }
 
     [When(@"I register handlers for ""(.*)"", ""(.*)"", and ""(.*)""")]
@@ -481,7 +481,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", "target", handler);
     }
 
     [Then(@"events ending with ""(.*)"" should match")]
@@ -1164,7 +1164,7 @@ public class AggregateClientSteps
             new[] { "google.protobuf.Empty" },
             (evtType, source, evt, dests) => new List<Angzarr.CommandBook>()
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-saga", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-saga", "test", "target", handler);
     }
 
     [Given(@"a saga command that was rejected")]
@@ -1733,7 +1733,7 @@ public class FlexibleSagaHandler : ISagaDomainHandler
         string,
         Angzarr.EventBook,
         Any,
-        IReadOnlyList<Angzarr.EventBook>,
+        Destinations,
         IReadOnlyList<Angzarr.CommandBook>
     > _dispatch;
 
@@ -1743,7 +1743,7 @@ public class FlexibleSagaHandler : ISagaDomainHandler
             string,
             Angzarr.EventBook,
             Any,
-            IReadOnlyList<Angzarr.EventBook>,
+            Destinations,
             IReadOnlyList<Angzarr.CommandBook>
         > dispatch
     )
@@ -1754,15 +1754,10 @@ public class FlexibleSagaHandler : ISagaDomainHandler
 
     public IReadOnlyList<string> EventTypes() => _eventTypes;
 
-    public IReadOnlyList<Angzarr.Cover> Prepare(Angzarr.EventBook source, Any eventPayload)
-    {
-        return new List<Angzarr.Cover>();
-    }
-
     public SagaHandlerResponse Execute(
         Angzarr.EventBook source,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         var typeUrl = eventPayload.TypeUrl;
@@ -1822,7 +1817,7 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
         Angzarr.EventBook,
         TestPMState,
         Any,
-        IReadOnlyList<Angzarr.EventBook>,
+        Destinations,
         ProcessManagerResponse
     > _dispatch;
 
@@ -1833,7 +1828,7 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
             Angzarr.EventBook,
             TestPMState,
             Any,
-            IReadOnlyList<Angzarr.EventBook>,
+            Destinations,
             ProcessManagerResponse
         > dispatch
     )
@@ -1857,7 +1852,7 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
         Angzarr.EventBook trigger,
         TestPMState state,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     )
     {
         var typeUrl = eventPayload.TypeUrl;

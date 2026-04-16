@@ -154,16 +154,24 @@ public class ProcessManagerRouter<TState>
         var state = RebuildState(processState);
 
         // Check for Notification
-        if (eventAny.TypeUrl.EndsWith("Notification"))
+        if (Helpers.TypeUrlMatches(eventAny.TypeUrl, "angzarr.Notification"))
         {
             return DispatchNotification(handler, eventAny, state);
         }
+
+        var destBooks = destinations ?? Array.Empty<Angzarr.EventBook>();
+        var dict = new Dictionary<string, uint>();
+        foreach (var book in destBooks)
+        {
+            dict[Helpers.Domain(book)] = Helpers.NextSequence(book);
+        }
+        var dest = new Destinations(dict);
 
         var response = handler.Handle(
             trigger,
             state,
             eventAny,
-            destinations ?? Array.Empty<Angzarr.EventBook>()
+            dest
         );
 
         var result = new Angzarr.ProcessManagerHandleResponse();

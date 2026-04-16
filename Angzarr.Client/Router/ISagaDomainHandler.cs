@@ -15,21 +15,12 @@ namespace Angzarr.Client.Router;
 ///     public IReadOnlyList&lt;string&gt; EventTypes() =>
 ///         new[] { "OrderCompleted", "OrderCancelled" };
 ///
-///     public IReadOnlyList&lt;Angzarr.Cover&gt; Prepare(
-///         Angzarr.EventBook source,
-///         Any eventPayload)
-///     {
-///         if (eventPayload.TypeUrl.EndsWith("OrderCompleted"))
-///             return PrepareOrderCompleted(source, eventPayload);
-///         return new List&lt;Angzarr.Cover&gt;();
-///     }
-///
 ///     public SagaHandlerResponse Execute(
 ///         Angzarr.EventBook source,
 ///         Any eventPayload,
-///         IReadOnlyList&lt;Angzarr.EventBook&gt; destinations)
+///         Destinations destinations)
 ///     {
-///         if (eventPayload.TypeUrl.EndsWith("OrderCompleted"))
+///         if (Helpers.TypeUrlMatches(eventPayload.TypeUrl, "examples.order.OrderCompleted"))
 ///             return HandleOrderCompleted(source, eventPayload, destinations);
 ///         return SagaHandlerResponse.Empty();
 ///     }
@@ -45,26 +36,17 @@ public interface ISagaDomainHandler
     IReadOnlyList<string> EventTypes();
 
     /// <summary>
-    /// Prepare phase - declare destination covers needed.
-    /// Called before Execute to fetch destination aggregate state.
-    /// </summary>
-    /// <param name="source">Source event book.</param>
-    /// <param name="eventPayload">The event payload as Any.</param>
-    /// <returns>List of covers identifying destination aggregates.</returns>
-    IReadOnlyList<Angzarr.Cover> Prepare(Angzarr.EventBook source, Any eventPayload);
-
-    /// <summary>
     /// Execute phase - produce commands and/or events.
     /// Called with source event and fetched destination state.
     /// </summary>
     /// <param name="source">Source event book.</param>
     /// <param name="eventPayload">The event payload as Any.</param>
-    /// <param name="destinations">Fetched destination aggregate states.</param>
+    /// <param name="destinations">Destination sequences for command stamping.</param>
     /// <returns>Response containing commands and events.</returns>
     SagaHandlerResponse Execute(
         Angzarr.EventBook source,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     );
 
     /// <summary>

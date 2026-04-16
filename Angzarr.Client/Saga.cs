@@ -74,7 +74,7 @@ public abstract class Saga
                 var attr = method.GetCustomAttribute<HandlesAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     dispatch[suffix] = (method, attr.EventType);
                 }
             }
@@ -91,7 +91,7 @@ public abstract class Saga
                 var attr = method.GetCustomAttribute<PreparesAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     prepares[suffix] = (method, attr.EventType);
                 }
             }
@@ -183,7 +183,7 @@ public abstract class Saga
     /// </summary>
     public static List<Angzarr.CommandBook> Execute<T>(
         Angzarr.EventBook source,
-        List<Angzarr.EventBook>? destinations = null
+        Destinations? destinations = null
     )
         where T : Saga, new()
     {
@@ -209,7 +209,7 @@ public abstract class Saga
         var prepareTable = _prepareTables[GetType()];
         foreach (var (suffix, (method, eventType)) in prepareTable)
         {
-            if (eventAny.TypeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);
@@ -227,13 +227,13 @@ public abstract class Saga
         Any eventAny,
         byte[]? root = null,
         string correlationId = "",
-        List<Angzarr.EventBook>? destinations = null
+        Destinations? destinations = null
     )
     {
         var dispatchTable = _dispatchTables[GetType()];
         foreach (var (suffix, (method, eventType)) in dispatchTable)
         {
-            if (eventAny.TypeUrl.EndsWith(suffix))
+            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
                 var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);
@@ -245,7 +245,11 @@ public abstract class Saga
                 {
                     result = method.Invoke(
                         this,
-                        new object?[] { evt, destinations ?? new List<Angzarr.EventBook>() }
+                        new object?[]
+                        {
+                            evt,
+                            destinations ?? new Destinations(new Dictionary<string, uint>()),
+                        }
                     );
                 }
                 else

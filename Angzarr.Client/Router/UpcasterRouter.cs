@@ -96,7 +96,7 @@ public class UpcasterRouter
 
             foreach (var entry in _handlers)
             {
-                if (typeUrl.EndsWith(entry.Suffix))
+                if (Helpers.TypeUrlMatches(typeUrl, entry.Suffix))
                 {
                     var newEvent = entry.Handler(eventAny);
                     var newPage = new Angzarr.EventPage
