@@ -1839,15 +1839,6 @@ public class FlexiblePMHandler : IProcessManagerDomainHandler<TestPMState>
 
     public IReadOnlyList<string> EventTypes() => _eventTypes;
 
-    public IReadOnlyList<Angzarr.Cover> Prepare(
-        Angzarr.EventBook trigger,
-        TestPMState state,
-        Any eventPayload
-    )
-    {
-        return new List<Angzarr.Cover>();
-    }
-
     public ProcessManagerResponse Handle(
         Angzarr.EventBook trigger,
         TestPMState state,
