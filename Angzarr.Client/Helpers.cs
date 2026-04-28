@@ -18,6 +18,18 @@ public static class Helpers
     public const string TypeUrlPrefix = "type.googleapis.com/";
 
     /// <summary>
+    /// Get the fully-qualified protobuf type name from a C# proto message type.
+    /// Creates a default instance to access the proto descriptor.
+    /// </summary>
+    /// <param name="messageType">The C# type implementing IMessage (e.g., typeof(RegisterPlayer))</param>
+    /// <returns>Fully qualified proto name (e.g., "examples.player.RegisterPlayer")</returns>
+    public static string ProtoFullName(System.Type messageType)
+    {
+        var instance = (IMessage)System.Activator.CreateInstance(messageType)!;
+        return instance.Descriptor.FullName;
+    }
+
+    /// <summary>
     /// Convert a System.Guid to an Angzarr UUID proto.
     /// </summary>
     public static Angzarr.UUID UuidToProto(Guid guid)

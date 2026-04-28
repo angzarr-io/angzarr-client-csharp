@@ -80,7 +80,7 @@ public class UnifiedRouterTests
         public SagaHandlerResponse Execute(
             EventBook source,
             Any eventPayload,
-            IReadOnlyList<EventBook> destinations
+            Destinations destinations
         )
         {
             if (eventPayload.TypeUrl.EndsWith("OrderCompleted"))
@@ -117,20 +117,11 @@ public class UnifiedRouterTests
     {
         public IReadOnlyList<string> EventTypes() => new[] { "TableSeated", "PlayerJoined" };
 
-        public IReadOnlyList<Cover> Prepare(
-            EventBook trigger,
-            HandFlowState state,
-            Any eventPayload
-        )
-        {
-            return Array.Empty<Cover>();
-        }
-
         public ProcessManagerResponse Handle(
             EventBook trigger,
             HandFlowState state,
             Any eventPayload,
-            IReadOnlyList<EventBook> destinations
+            Destinations destinations
         )
         {
             var response = new ProcessManagerResponse();
@@ -156,20 +147,11 @@ public class UnifiedRouterTests
     {
         public IReadOnlyList<string> EventTypes() => new[] { "PlayerReady" };
 
-        public IReadOnlyList<Cover> Prepare(
-            EventBook trigger,
-            HandFlowState state,
-            Any eventPayload
-        )
-        {
-            return Array.Empty<Cover>();
-        }
-
         public ProcessManagerResponse Handle(
             EventBook trigger,
             HandFlowState state,
             Any eventPayload,
-            IReadOnlyList<EventBook> destinations
+            Destinations destinations
         )
         {
             return new ProcessManagerResponse();

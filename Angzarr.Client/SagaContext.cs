@@ -22,6 +22,7 @@ namespace Angzarr.Client;
 /// }
 /// </code>
 /// </summary>
+[Obsolete("Use Destinations instead")]
 public class SagaContext
 {
     private readonly Dictionary<string, Angzarr.EventBook> _destinations;
@@ -29,7 +30,7 @@ public class SagaContext
     /// <summary>
     /// Create a context from a list of destination EventBooks.
     /// </summary>
-    /// <param name="destinationBooks">List of EventBooks fetched during prepare phase.</param>
+    /// <param name="destinationBooks">List of EventBooks for destination aggregates.</param>
     public SagaContext(IEnumerable<Angzarr.EventBook> destinationBooks)
     {
         _destinations = new Dictionary<string, Angzarr.EventBook>();

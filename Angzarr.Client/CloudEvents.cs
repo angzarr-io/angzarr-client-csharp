@@ -79,7 +79,7 @@ public abstract class CloudEventsProjector
                 var attr = method.GetCustomAttribute<CloudEventsHandlerAttribute>();
                 if (attr != null)
                 {
-                    var suffix = attr.EventType.Name;
+                    var suffix = Helpers.ProtoFullName(attr.EventType);
                     dispatch[suffix] = (method, attr.EventType);
                 }
             }
@@ -112,7 +112,7 @@ public abstract class CloudEventsProjector
 
             foreach (var (suffix, (method, eventType)) in dispatchTable)
             {
-                if (page.Event.TypeUrl.EndsWith(suffix))
+                if (Helpers.TypeUrlMatches(page.Event.TypeUrl, suffix))
                 {
                     var unpackMethod = typeof(Any)
                         .GetMethod("Unpack")!
@@ -226,7 +226,7 @@ public class CloudEventsRouter
     public CloudEventsRouter On<TEvent>(Func<TEvent, CloudEvent?> handler)
         where TEvent : IMessage
     {
-        var suffix = typeof(TEvent).Name;
+        var suffix = Helpers.ProtoFullName(typeof(TEvent));
         _handlers.Add(new CloudEventsEntry(suffix, typeof(TEvent), handler));
         return this;
     }
@@ -263,7 +263,7 @@ public class CloudEventsRouter
 
             foreach (var entry in _handlers)
             {
-                if (typeUrl.EndsWith(entry.Suffix))
+                if (Helpers.TypeUrlMatches(typeUrl, entry.Suffix))
                 {
                     CloudEvent? result;
 

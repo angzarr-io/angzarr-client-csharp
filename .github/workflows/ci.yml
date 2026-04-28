@@ -39,3 +39,6 @@ jobs:
 
       - name: Format check
         run: just -f justfile.container fmt
+
+      - name: Mutation Testing (Stryker.NET)
+        run: just -f justfile.container mutation-test

@@ -78,7 +78,7 @@ public class StateRouter<TState>
     public StateRouter<TState> On<TEvent>(Action<TState, TEvent> applier)
         where TEvent : IMessage, new()
     {
-        var suffix = typeof(TEvent).Name;
+        var suffix = Helpers.ProtoFullName(typeof(TEvent));
         _appliers[suffix] = new EventApplier<TEvent>(applier);
         return this;
     }
@@ -134,14 +134,12 @@ public class StateRouter<TState>
 
     private void ApplyEvent(TState state, Any eventAny)
     {
-        // Extract the simple type name from the TypeUrl
-        // e.g., "type.googleapis.com/examples.CommunityCardsDealt" -> "CommunityCardsDealt"
-        var typeUrl = eventAny.TypeUrl;
-        var lastDot = typeUrl.LastIndexOf('.');
-        var typeName = lastDot >= 0 ? typeUrl.Substring(lastDot + 1) : typeUrl;
+        // Extract fully-qualified type name from TypeUrl
+        // e.g., "type.googleapis.com/examples.CommunityCardsDealt" -> "examples.CommunityCardsDealt"
+        var fullName = Helpers.TypeNameFromUrl(eventAny.TypeUrl);
 
-        // Now match exactly by type name
-        if (_appliers.TryGetValue(typeName, out var applier))
+        // Match exactly by fully-qualified type name
+        if (_appliers.TryGetValue(fullName, out var applier))
         {
             applier.Apply(state, eventAny);
             return;

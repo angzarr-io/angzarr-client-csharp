@@ -17,20 +17,11 @@ namespace Angzarr.Client.Router;
 ///     public IReadOnlyList&lt;string&gt; EventTypes() =>
 ///         new[] { "OrderCreated" };
 ///
-///     public IReadOnlyList&lt;Angzarr.Cover&gt; Prepare(
-///         Angzarr.EventBook trigger,
-///         HandFlowState state,
-///         Any eventPayload)
-///     {
-///         // Declare needed destinations
-///         return new List&lt;Angzarr.Cover&gt;();
-///     }
-///
 ///     public ProcessManagerResponse Handle(
 ///         Angzarr.EventBook trigger,
 ///         HandFlowState state,
 ///         Any eventPayload,
-///         IReadOnlyList&lt;Angzarr.EventBook&gt; destinations)
+///         Destinations destinations)
 ///     {
 ///         // Process event, emit commands and/or PM events
 ///         return new ProcessManagerResponse();
@@ -47,27 +38,18 @@ public interface IProcessManagerDomainHandler<TState>
     IReadOnlyList<string> EventTypes();
 
     /// <summary>
-    /// Prepare phase - declare destination covers needed.
-    /// </summary>
-    /// <param name="trigger">The triggering event book.</param>
-    /// <param name="state">Current PM state.</param>
-    /// <param name="eventPayload">The event payload as Any.</param>
-    /// <returns>List of covers identifying needed destination aggregates.</returns>
-    IReadOnlyList<Angzarr.Cover> Prepare(Angzarr.EventBook trigger, TState state, Any eventPayload);
-
-    /// <summary>
     /// Handle phase - produce commands and PM events.
     /// </summary>
     /// <param name="trigger">The triggering event book.</param>
     /// <param name="state">Current PM state.</param>
     /// <param name="eventPayload">The event payload as Any.</param>
-    /// <param name="destinations">Fetched destination aggregate states.</param>
+    /// <param name="destinations">Destination sequences for command stamping.</param>
     /// <returns>Response containing commands and/or PM events.</returns>
     ProcessManagerResponse Handle(
         Angzarr.EventBook trigger,
         TState state,
         Any eventPayload,
-        IReadOnlyList<Angzarr.EventBook> destinations
+        Destinations destinations
     );
 
     /// <summary>

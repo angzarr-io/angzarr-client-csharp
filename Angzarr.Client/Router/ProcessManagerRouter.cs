@@ -18,11 +18,7 @@ namespace Angzarr.Client.Router;
 ///     .Domain("order", new OrderPmHandler())
 ///     .Domain("inventory", new InventoryPmHandler());
 ///
-/// // Phase 1: Get destinations needed
-/// var destinations = router.PrepareDestinations(trigger, processState);
-///
-/// // Phase 2: Execute with fetched destinations
-/// var response = router.Dispatch(trigger, processState, fetchedDestinations);
+/// var response = router.Dispatch(trigger, processState, destinations);
 /// </code>
 /// </summary>
 /// <typeparam name="TState">The PM state type.</typeparam>
@@ -97,35 +93,6 @@ public class ProcessManagerRouter<TState>
     }
 
     /// <summary>
-    /// Get destinations needed for the given trigger and process state.
-    /// </summary>
-    /// <param name="trigger">The triggering event book, may be null.</param>
-    /// <param name="processState">Current PM state as event book, may be null.</param>
-    /// <returns>List of covers identifying needed destination aggregates.</returns>
-    public IReadOnlyList<Angzarr.Cover> PrepareDestinations(
-        Angzarr.EventBook? trigger,
-        Angzarr.EventBook? processState
-    )
-    {
-        if (trigger == null || trigger.Pages.Count == 0)
-            return Array.Empty<Angzarr.Cover>();
-
-        var triggerDomain = trigger.Cover?.Domain ?? "";
-
-        var eventPage = trigger.Pages[^1]; // Last page
-        var eventAny = eventPage.Event;
-        if (eventAny == null)
-            return Array.Empty<Angzarr.Cover>();
-
-        var state = processState != null ? RebuildState(processState) : new TState();
-
-        if (!_domains.TryGetValue(triggerDomain, out var handler))
-            return Array.Empty<Angzarr.Cover>();
-
-        return handler.Prepare(trigger, state, eventAny);
-    }
-
-    /// <summary>
     /// Dispatch a trigger event to the appropriate handler.
     /// </summary>
     /// <param name="trigger">The triggering event book.</param>
@@ -154,16 +121,24 @@ public class ProcessManagerRouter<TState>
         var state = RebuildState(processState);
 
         // Check for Notification
-        if (eventAny.TypeUrl.EndsWith("Notification"))
+        if (Helpers.TypeUrlMatches(eventAny.TypeUrl, "angzarr.Notification"))
         {
             return DispatchNotification(handler, eventAny, state);
         }
+
+        var destBooks = destinations ?? Array.Empty<Angzarr.EventBook>();
+        var dict = new Dictionary<string, uint>();
+        foreach (var book in destBooks)
+        {
+            dict[Helpers.Domain(book)] = Helpers.NextSequence(book);
+        }
+        var dest = new Destinations(dict);
 
         var response = handler.Handle(
             trigger,
             state,
             eventAny,
-            destinations ?? Array.Empty<Angzarr.EventBook>()
+            dest
         );
 
         var result = new Angzarr.ProcessManagerHandleResponse();

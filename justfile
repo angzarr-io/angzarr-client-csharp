@@ -54,6 +54,9 @@ serve:
 coverage:
     just _container coverage
 
+mutation-test:
+    just _container mutation-test
+
 pack:
     just _container pack
 
