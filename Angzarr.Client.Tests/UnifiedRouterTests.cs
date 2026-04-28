@@ -117,15 +117,6 @@ public class UnifiedRouterTests
     {
         public IReadOnlyList<string> EventTypes() => new[] { "TableSeated", "PlayerJoined" };
 
-        public IReadOnlyList<Cover> Prepare(
-            EventBook trigger,
-            HandFlowState state,
-            Any eventPayload
-        )
-        {
-            return Array.Empty<Cover>();
-        }
-
         public ProcessManagerResponse Handle(
             EventBook trigger,
             HandFlowState state,
@@ -155,15 +146,6 @@ public class UnifiedRouterTests
     private class PlayerPmHandler : IProcessManagerDomainHandler<HandFlowState>
     {
         public IReadOnlyList<string> EventTypes() => new[] { "PlayerReady" };
-
-        public IReadOnlyList<Cover> Prepare(
-            EventBook trigger,
-            HandFlowState state,
-            Any eventPayload
-        )
-        {
-            return Array.Empty<Cover>();
-        }
 
         public ProcessManagerResponse Handle(
             EventBook trigger,

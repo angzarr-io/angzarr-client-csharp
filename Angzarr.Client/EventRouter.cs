@@ -13,7 +13,6 @@ namespace Angzarr.Client;
 /// <code>
 /// var router = new EventRouter("saga-table-hand")
 ///     .Domain("table")
-///     .Prepare&lt;HandStarted&gt;(PrepareHandStarted)
 ///     .On&lt;HandStarted&gt;(HandleHandStarted);
 /// </code>
 /// </summary>
@@ -21,7 +20,6 @@ public class EventRouter
 {
     private readonly string _name;
     private string? _currentDomain;
-    private readonly Dictionary<Type, Delegate> _prepareHandlers = new();
     private readonly Dictionary<Type, Delegate> _reactHandlers = new();
 
     public EventRouter(string name)
@@ -39,19 +37,6 @@ public class EventRouter
     }
 
     /// <summary>
-    /// Register a prepare handler.
-    /// Must be called after Domain() to set context.
-    /// </summary>
-    public EventRouter Prepare<TEvent>(Func<TEvent, List<Cover>> handler)
-        where TEvent : IMessage
-    {
-        if (_currentDomain == null)
-            throw new InvalidOperationException("Must call Domain() before Prepare()");
-        _prepareHandlers[typeof(TEvent)] = handler;
-        return this;
-    }
-
-    /// <summary>
     /// Register an event reaction handler.
     /// Must be called after Domain() to set context.
     /// </summary>
@@ -62,19 +47,6 @@ public class EventRouter
             throw new InvalidOperationException("Must call Domain() before On()");
         _reactHandlers[typeof(TEvent)] = handler;
         return this;
-    }
-
-    /// <summary>
-    /// Execute prepare phase.
-    /// </summary>
-    public List<Cover> DoPrepare(IMessage eventMessage)
-    {
-        var eventType = eventMessage.GetType();
-        if (_prepareHandlers.TryGetValue(eventType, out var handler))
-        {
-            return (List<Cover>)handler.DynamicInvoke(eventMessage)!;
-        }
-        return new List<Cover>();
     }
 
     /// <summary>

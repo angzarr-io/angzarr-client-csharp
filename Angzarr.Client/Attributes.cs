@@ -34,21 +34,6 @@ public class AppliesAttribute : Attribute
 }
 
 /// <summary>
-/// Marks a method as a prepare handler for two-phase saga/PM protocol.
-/// The method should return a list of Covers identifying destination aggregates.
-/// </summary>
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
-public class PreparesAttribute : Attribute
-{
-    public Type EventType { get; }
-
-    public PreparesAttribute(Type eventType)
-    {
-        EventType = eventType;
-    }
-}
-
-/// <summary>
 /// Marks a method as a projector event handler.
 /// The method should return a Projection.
 /// </summary>

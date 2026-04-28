@@ -12,7 +12,6 @@ namespace Angzarr.Client;
 /// - Override Name property
 /// - Override CreateEmptyState() and ApplyEvent()
 /// - Decorate event handlers with [Handles(typeof(EventType), InputDomain = "...")]
-/// - Optionally decorate prepare handlers with [Prepares(typeof(EventType))]
 /// - Optionally decorate rejection handlers with [Rejected("domain", "command")]
 /// </summary>
 public abstract class ProcessManager<TState>
@@ -31,10 +30,6 @@ public abstract class ProcessManager<TState>
             (MethodInfo Method, Type EventType, string? InputDomain, string? OutputDomain)
         >
     > _dispatchTables = new();
-    private static readonly Dictionary<
-        Type,
-        Dictionary<string, (MethodInfo Method, Type EventType)>
-    > _prepareTables = new();
     private static readonly Dictionary<Type, Dictionary<string, MethodInfo>> _rejectionTables =
         new();
     private static readonly Dictionary<Type, Dictionary<string, List<string>>> _inputDomains =
@@ -107,23 +102,6 @@ public abstract class ProcessManager<TState>
             _dispatchTables[type] = dispatch;
             _inputDomains[type] = domains;
 
-            // Build prepare handler dispatch table
-            var prepares = new Dictionary<string, (MethodInfo, Type)>();
-            foreach (
-                var method in type.GetMethods(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                )
-            )
-            {
-                var attr = method.GetCustomAttribute<PreparesAttribute>();
-                if (attr != null)
-                {
-                    var suffix = Helpers.ProtoFullName(attr.EventType);
-                    prepares[suffix] = (method, attr.EventType);
-                }
-            }
-            _prepareTables[type] = prepares;
-
             // Build rejection handler dispatch table
             var rejections = new Dictionary<string, MethodInfo>();
             foreach (
@@ -144,28 +122,7 @@ public abstract class ProcessManager<TState>
     }
 
     /// <summary>
-    /// Phase 1: Declare additional destinations needed.
-    /// </summary>
-    public static List<Angzarr.Cover> PrepareDestinations<T>(
-        Angzarr.EventBook trigger,
-        Angzarr.EventBook processState
-    )
-        where T : ProcessManager<TState>, new()
-    {
-        var pm = (T)Activator.CreateInstance(typeof(T), processState)!;
-        var destinations = new List<Angzarr.Cover>();
-
-        foreach (var page in trigger.Pages)
-        {
-            if (page.Event != null)
-                destinations.AddRange(pm.Prepare(page.Event));
-        }
-
-        return destinations;
-    }
-
-    /// <summary>
-    /// Phase 2: Handle a trigger event with current process state.
+    /// Handle a trigger event with current process state.
     /// </summary>
     public static (List<Angzarr.CommandBook> Commands, Angzarr.EventBook ProcessEvents) Handle<T>(
         Angzarr.EventBook trigger,
@@ -186,25 +143,6 @@ public abstract class ProcessManager<TState>
         }
 
         return (commands, pm.ProcessEvents());
-    }
-
-    /// <summary>
-    /// Prepare destinations for a single event.
-    /// </summary>
-    public List<Angzarr.Cover> Prepare(Any eventAny)
-    {
-        var prepareTable = _prepareTables[GetType()];
-        foreach (var (suffix, (method, eventType)) in prepareTable)
-        {
-            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
-            {
-                var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
-                var evt = unpackMethod.Invoke(eventAny, null);
-                var result = method.Invoke(this, new[] { evt });
-                return result as List<Angzarr.Cover> ?? new List<Angzarr.Cover>();
-            }
-        }
-        return new List<Angzarr.Cover>();
     }
 
     /// <summary>

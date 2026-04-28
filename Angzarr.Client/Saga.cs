@@ -11,7 +11,6 @@ namespace Angzarr.Client;
 /// Subclasses must:
 /// - Override Name, InputDomain, OutputDomain properties
 /// - Decorate event handlers with [Handles(typeof(EventType))]
-/// - Optionally decorate prepare handlers with [Prepares(typeof(EventType))]
 /// </summary>
 public abstract class Saga
 {
@@ -20,10 +19,6 @@ public abstract class Saga
         Type,
         Dictionary<string, (MethodInfo Method, Type EventType)>
     > _dispatchTables = new();
-    private static readonly Dictionary<
-        Type,
-        Dictionary<string, (MethodInfo Method, Type EventType)>
-    > _prepareTables = new();
     private static readonly Dictionary<
         Type,
         Dictionary<string, (MethodInfo Method, Type? EventType)>
@@ -79,23 +74,6 @@ public abstract class Saga
                 }
             }
             _dispatchTables[type] = dispatch;
-
-            // Build prepare handler dispatch table
-            var prepares = new Dictionary<string, (MethodInfo, Type)>();
-            foreach (
-                var method in type.GetMethods(
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
-                )
-            )
-            {
-                var attr = method.GetCustomAttribute<PreparesAttribute>();
-                if (attr != null)
-                {
-                    var suffix = Helpers.ProtoFullName(attr.EventType);
-                    prepares[suffix] = (method, attr.EventType);
-                }
-            }
-            _prepareTables[type] = prepares;
 
             // Build rejection handler dispatch table
             var rejections = new Dictionary<string, (MethodInfo, Type?)>();
@@ -161,25 +139,7 @@ public abstract class Saga
     protected List<Angzarr.EventBook> GetEvents() => new(_events);
 
     /// <summary>
-    /// Phase 1: Declare destination aggregates needed.
-    /// </summary>
-    public static List<Angzarr.Cover> PrepareDestinations<T>(Angzarr.EventBook source)
-        where T : Saga, new()
-    {
-        var saga = new T();
-        var destinations = new List<Angzarr.Cover>();
-
-        foreach (var page in source.Pages)
-        {
-            if (page.Event != null)
-                destinations.AddRange(saga.Prepare(page.Event));
-        }
-
-        return destinations;
-    }
-
-    /// <summary>
-    /// Phase 2: Process EventBook and return commands.
+    /// Process EventBook and return commands.
     /// </summary>
     public static List<Angzarr.CommandBook> Execute<T>(
         Angzarr.EventBook source,
@@ -199,25 +159,6 @@ public abstract class Saga
         }
 
         return commands;
-    }
-
-    /// <summary>
-    /// Prepare destinations for a single event.
-    /// </summary>
-    public List<Angzarr.Cover> Prepare(Any eventAny)
-    {
-        var prepareTable = _prepareTables[GetType()];
-        foreach (var (suffix, (method, eventType)) in prepareTable)
-        {
-            if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
-            {
-                var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
-                var evt = unpackMethod.Invoke(eventAny, null);
-                var result = method.Invoke(this, new[] { evt });
-                return result as List<Angzarr.Cover> ?? new List<Angzarr.Cover>();
-            }
-        }
-        return new List<Angzarr.Cover>();
     }
 
     /// <summary>
