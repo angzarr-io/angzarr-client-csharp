@@ -78,6 +78,13 @@ public interface ICommandHandlerDomainHandler<TState>
     Angzarr.EventBook Handle(Angzarr.CommandBook cmd, Any payload, TState state, int seq);
 
     /// <summary>
+    /// Handle injected facts and return the resulting EventBook.
+    /// Facts are always accepted (cannot be rejected). Override to emit
+    /// additional events or augment facts. Default: pass-through.
+    /// </summary>
+    Angzarr.EventBook HandleFact(Angzarr.EventBook facts, TState state) => facts;
+
+    /// <summary>
     /// Handle a rejection notification.
     /// Called when a command issued by a saga/PM targeting this
     /// domain was rejected. Override to provide custom compensation logic.

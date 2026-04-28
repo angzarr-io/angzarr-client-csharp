@@ -21,6 +21,14 @@ test:
 coverage:
     dotnet test --collect:"XPlat Code Coverage"
 
+# Format check (dotnet format)
+fmt:
+    dotnet format --verify-no-changes
+
+# Auto-format code
+fmt-fix:
+    dotnet format
+
 pack:
     cd Angzarr.Client && dotnet pack
 

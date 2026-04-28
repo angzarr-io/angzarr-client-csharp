@@ -314,7 +314,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", "target", handler);
     }
 
     [Given(@"a saga router")]
@@ -328,7 +328,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("saga-test", "orders", "target", handler);
     }
 
     [When(@"I receive an ""(.*)"" event")]
@@ -452,7 +452,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", "target", handler);
     }
 
     [When(@"I register handler for type ""(.*)""")]
@@ -467,7 +467,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", "target", handler);
     }
 
     [When(@"I register handlers for ""(.*)"", ""(.*)"", and ""(.*)""")]
@@ -481,7 +481,7 @@ public class AggregateClientSteps
                 return new List<Angzarr.CommandBook>();
             }
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-router", "test", "target", handler);
     }
 
     [Then(@"events ending with ""(.*)"" should match")]
@@ -1164,7 +1164,7 @@ public class AggregateClientSteps
             new[] { "google.protobuf.Empty" },
             (evtType, source, evt, dests) => new List<Angzarr.CommandBook>()
         );
-        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-saga", "test", handler);
+        _sagaRouter = new SagaRouter<FlexibleSagaHandler>("test-saga", "test", "target", handler);
     }
 
     [Given(@"a saga command that was rejected")]
@@ -1753,11 +1753,6 @@ public class FlexibleSagaHandler : ISagaDomainHandler
     }
 
     public IReadOnlyList<string> EventTypes() => _eventTypes;
-
-    public IReadOnlyList<Angzarr.Cover> Prepare(Angzarr.EventBook source, Any eventPayload)
-    {
-        return new List<Angzarr.Cover>();
-    }
 
     public SagaHandlerResponse Execute(
         Angzarr.EventBook source,

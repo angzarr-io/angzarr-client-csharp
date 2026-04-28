@@ -47,16 +47,25 @@ public sealed class CommandHandlerClient : IDisposable
     /// <exception cref="ConnectionError">If connection fails</exception>
     public static CommandHandlerClient Connect(string endpoint)
     {
+        return Connect(endpoint, ExponentialBackoffRetry.Default());
+    }
+
+    public static CommandHandlerClient Connect(string endpoint, IRetryPolicy retry)
+    {
         try
         {
-            var channel = GrpcChannel.ForAddress(FormatEndpoint(endpoint));
+            GrpcChannel? channel = null;
+            retry.Execute(() =>
+            {
+                channel = GrpcChannel.ForAddress(FormatEndpoint(endpoint));
+            });
             var stub =
                 new Angzarr.CommandHandlerCoordinatorService.CommandHandlerCoordinatorServiceClient(
-                    channel
+                    channel!
                 );
             return new CommandHandlerClient(channel, stub, true);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not ConnectionError)
         {
             throw new ConnectionError($"Failed to connect to {endpoint}", e);
         }
@@ -140,7 +149,12 @@ public sealed class CommandHandlerClient : IDisposable
     /// <exception cref="GrpcError">If the gRPC call fails</exception>
     public Angzarr.CommandResponse Handle(Angzarr.CommandBook command, Angzarr.SyncMode syncMode)
     {
-        return HandleCommand(new Angzarr.CommandRequest { Command = command, SyncMode = syncMode });
+        return HandleCommand(new Angzarr.CommandRequest
+        {
+            Command = command,
+            SyncMode = syncMode,
+            CascadeErrorMode = Angzarr.CascadeErrorMode.CascadeErrorFailFast,
+        });
     }
 
     /// <summary>

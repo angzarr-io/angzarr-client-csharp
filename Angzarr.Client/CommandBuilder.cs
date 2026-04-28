@@ -31,6 +31,7 @@ public class CommandBuilder
     private readonly Guid? _root;
     private string? _correlationId;
     private uint _sequence = 0;
+    private bool _sequenceSet = false;
     private string? _typeUrl;
     private byte[]? _payload;
     private Angzarr.MergeStrategy _mergeStrategy = Angzarr.MergeStrategy.MergeCommutative;
@@ -85,6 +86,7 @@ public class CommandBuilder
     public CommandBuilder WithSequence(int seq)
     {
         _sequence = (uint)seq;
+        _sequenceSet = true;
         return this;
     }
 
@@ -136,6 +138,9 @@ public class CommandBuilder
 
         if (_payload == null)
             throw new InvalidArgumentError("command payload not set");
+
+        if (!_sequenceSet)
+            throw new InvalidArgumentError("sequence not set (call WithSequence)");
 
         var correlationId = _correlationId;
         if (string.IsNullOrEmpty(correlationId))

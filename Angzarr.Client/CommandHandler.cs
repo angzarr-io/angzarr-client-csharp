@@ -182,7 +182,7 @@ public abstract class CommandHandler<TState>
         foreach (var (key, method) in rejectionTable)
         {
             var parts = key.Split('/');
-            if (parts[0] == domain && commandSuffix.EndsWith(parts[1]))
+            if (parts[0] == domain && commandSuffix == parts[1])
             {
                 _ = State; // Ensure state is built
                 var result = method.Invoke(this, new object[] { notification });
