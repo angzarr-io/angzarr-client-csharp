@@ -13,9 +13,31 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!--
+          angzarr-project relocated proto files from proto/angzarr/*.proto
+          to proto/angzarr_client/proto/angzarr/*.proto. Generated namespace
+          stays Angzarr.* via the unchanged `csharp_namespace` option, so
+          source code is untouched — only the file glob moves.
+        -->
         <Protobuf
-            Include="../angzarr-project/proto/angzarr/*.proto"
+            Include="../angzarr-project/proto/angzarr_client/proto/angzarr/*.proto"
             GrpcServices="Both"
+            ProtoRoot="../angzarr-project/proto"
+        />
+        <!--
+          PR #11 (angzarr-project): types.proto imports sererr/v1/sererr.proto
+          for EventProcessingFailedDetails.stack_trace. sererr lives at
+          proto/sererr/v1/ in the submodule. This <Protobuf> include is
+          gated on the file being present (resolves only after the
+          angzarr-project pointer is bumped past a8683ed to land PR #11).
+          Per hard rule "Don't bump angzarr-project submodule pointer"
+          in the C# migration, the gate is `Condition="Exists(..)"` so the
+          current pinned 4f15da3 keeps compiling.
+        -->
+        <Protobuf
+            Condition="Exists('../angzarr-project/proto/sererr/v1/sererr.proto')"
+            Include="../angzarr-project/proto/sererr/v1/sererr.proto"
+            GrpcServices="None"
             ProtoRoot="../angzarr-project/proto"
         />
     </ItemGroup>

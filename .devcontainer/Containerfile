@@ -4,5 +4,21 @@
 ARG CSHARP_IMAGE=ghcr.io/angzarr-io/angzarr-csharp:latest
 FROM ${CSHARP_IMAGE}
 
+# INFRA-1: rootless docker — trust any bind-mounted workspace path so
+# `git rev-parse --show-toplevel` inside `just _container` succeeds.
+USER root
+RUN git config --system --add safe.directory '*' \
+ && git config --system --add safe.directory '/workspace' \
+ && git config --system --add safe.directory '/angzarr'
+
 # Mark as devcontainer for justfile detection
 ENV DEVCONTAINER=true
+
+# Mutation tooling: pin Stryker.NET
+# Verified in Phase E.v2 (2026-05-16): the base ghcr.io/angzarr-io/angzarr-csharp:latest
+# image does NOT include dotnet-stryker, so we install it explicitly here for
+# reproducibility. Tracked from D-C# (4.6.0) -> Phase E.v2 (4.14.1; latest stable).
+ARG STRYKER_VERSION=4.14.1
+RUN dotnet tool install -g dotnet-stryker --version ${STRYKER_VERSION} \
+ && ln -sf /root/.dotnet/tools/dotnet-stryker /usr/local/bin/dotnet-stryker
+ENV PATH="/root/.dotnet/tools:${PATH}"

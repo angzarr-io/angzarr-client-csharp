@@ -2,14 +2,58 @@ namespace Angzarr.Client;
 
 /// <summary>
 /// Base exception for all Angzarr client errors.
+///
+/// <para>Audit finding #59 (structural error model). Every error carries:</para>
+/// <list type="bullet">
+///   <item>A static <see cref="Exception.Message"/> — the same exact string for
+///   the same predicate failure across all call sites, suitable for log
+///   greppability and cross-language equality.</item>
+///   <item>A stable <see cref="Code"/> identifier (SCREAMING_SNAKE) — programmatic
+///   dispatch and cucumber assertions key off this.</item>
+///   <item>Structured <see cref="Details"/> — runtime context that varies per
+///   call site.</item>
+/// </list>
+///
+/// <para>Callers MUST NOT interpolate runtime values into the message; that
+/// defeats the static-string contract. Put runtime values in
+/// <see cref="Details"/>.</para>
 /// </summary>
 public class ClientError : Exception
 {
-    public ClientError(string message)
-        : base(message) { }
+    /// <summary>
+    /// Stable SCREAMING_SNAKE identifier (audit #59). See
+    /// <see cref="ErrorCodes"/> for the canonical list.
+    /// </summary>
+    public string Code { get; }
 
-    public ClientError(string message, Exception inner)
-        : base(message, inner) { }
+    /// <summary>
+    /// Structured runtime context (audit #59). Cucumber assertions read from
+    /// <see cref="Details"/> rather than parsing the message string.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Details { get; }
+
+    public ClientError(string message, string code = "", IDictionary<string, string>? details = null)
+        : base(message)
+    {
+        Code = code;
+        Details = details != null
+            ? new Dictionary<string, string>(details)
+            : new Dictionary<string, string>();
+    }
+
+    public ClientError(
+        string message,
+        Exception inner,
+        string code = "",
+        IDictionary<string, string>? details = null
+    )
+        : base(message, inner)
+    {
+        Code = code;
+        Details = details != null
+            ? new Dictionary<string, string>(details)
+            : new Dictionary<string, string>();
+    }
 
     /// <summary>
     /// Returns true if this is a "not found" error.
@@ -34,30 +78,60 @@ public class ClientError : Exception
 
 /// <summary>
 /// Thrown when a command is rejected by business logic.
-/// Maps to gRPC FAILED_PRECONDITION status.
+///
+/// <para>Status codes and retry semantics mirror Python/Rust:</para>
+/// <list type="bullet">
+///   <item><c>FAILED_PRECONDITION</c>: state-based rejection; retryable after refreshing state.</item>
+///   <item><c>INVALID_ARGUMENT</c>: bad input; not retryable.</item>
+///   <item><c>NOT_FOUND</c>: aggregate does not exist; not retryable.</item>
+/// </list>
+///
+/// <para>Audit finding #59: callers pass a static <c>message</c>, a SCREAMING_SNAKE
+/// <c>code</c>, and structured <c>details</c>. The factory methods
+/// (<see cref="PreconditionFailed(string,string,IDictionary{string,string})"/>,
+/// <see cref="InvalidArgument(string,string,IDictionary{string,string})"/>,
+/// <see cref="NotFound(string,string,IDictionary{string,string})"/>) bind the
+/// appropriate <see cref="StatusCode"/>.</para>
 /// </summary>
 public class CommandRejectedError : ClientError
 {
-    public string Code { get; }
+    /// <summary>
+    /// gRPC-style status (<c>FAILED_PRECONDITION</c> / <c>INVALID_ARGUMENT</c>
+    /// / <c>NOT_FOUND</c>). Mirrors Python's <c>status_code</c> attribute.
+    /// </summary>
+    public string StatusCode { get; }
 
     public CommandRejectedError(string message)
-        : base(message)
+        : base(message, code: "")
     {
-        Code = "FAILED_PRECONDITION";
+        StatusCode = "FAILED_PRECONDITION";
     }
 
-    public CommandRejectedError(string message, string code)
-        : base(message)
+    public CommandRejectedError(string message, string statusCode)
+        : base(message, code: "")
     {
-        Code = code;
+        StatusCode = statusCode;
     }
 
-    public override bool IsPreconditionFailed() => Code == "FAILED_PRECONDITION";
+    public CommandRejectedError(
+        string message,
+        string statusCode,
+        string code,
+        IDictionary<string, string>? details
+    )
+        : base(message, code: code, details: details)
+    {
+        StatusCode = statusCode;
+    }
 
-    public override bool IsInvalidArgument() => Code == "INVALID_ARGUMENT";
+    public override bool IsPreconditionFailed() => StatusCode == "FAILED_PRECONDITION";
+
+    public override bool IsInvalidArgument() => StatusCode == "INVALID_ARGUMENT";
+
+    public override bool IsNotFound() => StatusCode == "NOT_FOUND";
 
     /// <summary>
-    /// Create a precondition failed error.
+    /// Create a precondition failed error (legacy single-arg overload).
     /// </summary>
     public static CommandRejectedError PreconditionFailed(string message)
     {
@@ -65,7 +139,24 @@ public class CommandRejectedError : ClientError
     }
 
     /// <summary>
-    /// Create an invalid argument error.
+    /// Create a precondition failed error with structured code/details.
+    ///
+    /// <para>Audit #59 — preferred form. <paramref name="code"/> should come from
+    /// <see cref="ErrorCodes"/>; <paramref name="message"/> from
+    /// <see cref="ErrorMessages"/>; <paramref name="details"/> keys from
+    /// <see cref="ErrorKeys"/>.</para>
+    /// </summary>
+    public static CommandRejectedError PreconditionFailed(
+        string code,
+        string message,
+        IDictionary<string, string>? details = null
+    )
+    {
+        return new CommandRejectedError(message, "FAILED_PRECONDITION", code, details);
+    }
+
+    /// <summary>
+    /// Create an invalid argument error (legacy single-arg overload).
     /// </summary>
     public static CommandRejectedError InvalidArgument(string message)
     {
@@ -73,11 +164,35 @@ public class CommandRejectedError : ClientError
     }
 
     /// <summary>
-    /// Create a not found error.
+    /// Create an invalid argument error with structured code/details (audit #59).
+    /// </summary>
+    public static CommandRejectedError InvalidArgument(
+        string code,
+        string message,
+        IDictionary<string, string>? details = null
+    )
+    {
+        return new CommandRejectedError(message, "INVALID_ARGUMENT", code, details);
+    }
+
+    /// <summary>
+    /// Create a not found error (legacy single-arg overload).
     /// </summary>
     public static CommandRejectedError NotFound(string message)
     {
         return new CommandRejectedError(message, "NOT_FOUND");
+    }
+
+    /// <summary>
+    /// Create a not found error with structured code/details (audit #59).
+    /// </summary>
+    public static CommandRejectedError NotFound(
+        string code,
+        string message,
+        IDictionary<string, string>? details = null
+    )
+    {
+        return new CommandRejectedError(message, "NOT_FOUND", code, details);
     }
 }
 
@@ -89,7 +204,7 @@ public class GrpcError : ClientError
     public Grpc.Core.StatusCode StatusCode { get; }
 
     public GrpcError(string message, Grpc.Core.StatusCode statusCode)
-        : base(message)
+        : base(message, code: ErrorCodes.GrpcError)
     {
         StatusCode = statusCode;
     }
@@ -110,10 +225,13 @@ public class GrpcError : ClientError
 public class ConnectionError : ClientError
 {
     public ConnectionError(string message)
-        : base(message) { }
+        : base(message, code: ErrorCodes.ConnectionFailed) { }
 
     public ConnectionError(string message, Exception inner)
-        : base(message, inner) { }
+        : base(message, inner, code: ErrorCodes.ConnectionFailed) { }
+
+    public ConnectionError(string message, string code, IDictionary<string, string>? details = null)
+        : base(message, code: code, details: details) { }
 
     public override bool IsConnectionError() => true;
 }
@@ -124,10 +242,13 @@ public class ConnectionError : ClientError
 public class TransportError : ClientError
 {
     public TransportError(string message)
-        : base(message) { }
+        : base(message, code: ErrorCodes.TransportError) { }
 
     public TransportError(string message, Exception inner)
-        : base(message, inner) { }
+        : base(message, inner, code: ErrorCodes.TransportError) { }
+
+    public TransportError(string message, string code, IDictionary<string, string>? details = null)
+        : base(message, code: code, details: details) { }
 
     public override bool IsConnectionError() => true;
 }
@@ -137,8 +258,14 @@ public class TransportError : ClientError
 /// </summary>
 public class InvalidArgumentError : ClientError
 {
+    // Spec LOW-1.13: vestigial "INVALID_ARGUMENT" default removed.
+    // Callers should pass a domain-specific code from ErrorCodes;
+    // an empty code is preferable to a stamped non-inventory token.
     public InvalidArgumentError(string message)
-        : base(message) { }
+        : base(message, code: "") { }
+
+    public InvalidArgumentError(string message, string code, IDictionary<string, string>? details = null)
+        : base(message, code: code, details: details) { }
 
     public override bool IsInvalidArgument() => true;
 }
@@ -149,5 +276,5 @@ public class InvalidArgumentError : ClientError
 public class InvalidTimestampError : ClientError
 {
     public InvalidTimestampError(string message)
-        : base(message) { }
+        : base(message, code: "INVALID_TIMESTAMP") { }
 }

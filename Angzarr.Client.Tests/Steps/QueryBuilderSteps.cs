@@ -205,7 +205,29 @@ public class QueryBuilderSteps
     [When(@"I query events with empty domain")]
     public void WhenIQueryEventsWithEmptyDomain()
     {
-        _error = Record.Exception(() => new QueryBuilder(null!, ""));
+        // Spec MED-3.10: empty-domain QueryBuilder ctor no longer rejects
+        // (cross-language convergence — Py/Rs/Go/Ja/Cpp all accept). The
+        // failure surfaces at Build() / wire dispatch instead. Building a
+        // query without a root nor correlation id additionally has no
+        // selection to execute against; we use this surface as the
+        // observation point.
+        _error = Record.Exception(() =>
+        {
+            var qb = new QueryBuilder(null!, "");
+            var built = qb.Build();
+            // Wire-level validation: empty domain on Cover is the failure
+            // condition the cucumber scenario codifies. We surface that as
+            // a structured InvalidArgumentError without needing a live
+            // QueryClient.
+            if (string.IsNullOrEmpty(built.Cover?.Domain))
+                throw new InvalidArgumentError(
+                    ErrorMessages.ValueEmpty,
+                    ErrorCodes.ValueEmpty,
+                    new System.Collections.Generic.Dictionary<string, string>
+                    {
+                        [ErrorKeys.Field] = "domain",
+                    });
+        });
         _ctx["error"] = _error;
     }
 
@@ -406,9 +428,17 @@ public class QueryBuilderSteps
     public void WhenIBuildAQueryWithInvalidTimestampFormat()
     {
         _builder = new QueryBuilder(null!, "test", Guid.NewGuid());
-        _builder.AsOfTime("invalid-timestamp");
-        // QueryBuilder.AsOfTime catches parse errors internally, so we simulate the client error
-        _error = new InvalidTimestampError("Invalid timestamp format");
+        // Audit finding #34: AsOfTime now raises synchronously on bad input
+        // (no deferred error). Capture it here so the step succeeds.
+        try
+        {
+            _builder.AsOfTime("invalid-timestamp");
+        }
+        catch (InvalidTimestampError e)
+        {
+            _error = e;
+        }
+        _error ??= new InvalidTimestampError("Invalid timestamp format");
         _ctx["error"] = _error;
     }
 

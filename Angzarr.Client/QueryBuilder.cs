@@ -33,22 +33,26 @@ public class QueryBuilder
     private readonly string _domain;
     private Guid? _root;
     private string? _correlationId;
+    // Audit finding #23: a single selection slot — matches Rust's
+    // `selection: Option<Selection>` so chained range/as_of_sequence/as_of_time
+    // setters are last-wins instead of leaving stale state behind.
     private Angzarr.SequenceRange? _rangeSelect;
     private Angzarr.TemporalQuery? _temporal;
     private string? _edition;
-    private Exception? _error;
 
     /// <summary>
     /// Create a query builder for a specific aggregate.
+    ///
+    /// <para>Spec MED-3.10: empty-domain construction is permitted (matches
+    /// Py/Rs/Go/Ja/Cpp). Previously this ctor threw; the validation moved
+    /// to call sites that care, so cross-language test scenarios produce
+    /// equivalent shapes.</para>
     /// </summary>
     /// <param name="client">The query client to use</param>
     /// <param name="domain">The aggregate domain</param>
     /// <param name="root">The aggregate root GUID</param>
-    /// <exception cref="InvalidArgumentError">If domain is empty</exception>
     public QueryBuilder(QueryClient client, string domain, Guid root)
     {
-        if (string.IsNullOrEmpty(domain))
-            throw new InvalidArgumentError("domain cannot be empty");
         _client = client;
         _domain = domain;
         _root = root;
@@ -56,14 +60,12 @@ public class QueryBuilder
 
     /// <summary>
     /// Create a query builder by domain only (use with ByCorrelationId).
+    /// Spec MED-3.10 — see ctor above.
     /// </summary>
     /// <param name="client">The query client to use</param>
     /// <param name="domain">The aggregate domain</param>
-    /// <exception cref="InvalidArgumentError">If domain is empty</exception>
     public QueryBuilder(QueryClient client, string domain)
     {
-        if (string.IsNullOrEmpty(domain))
-            throw new InvalidArgumentError("domain cannot be empty");
         _client = client;
         _domain = domain;
         _root = null;
@@ -99,20 +101,27 @@ public class QueryBuilder
     /// <summary>
     /// Query a range of sequences from lower (inclusive).
     ///
-    /// <para>Use for incremental sync: "give me events since sequence N"</para>
+    /// <para>Use for incremental sync: "give me events since sequence N".</para>
+    ///
+    /// <para>Last-selection-wins (audit #23): clears any previously-set temporal
+    /// selection so chained calls like
+    /// <c>.AsOfSequence(10).Range(5)</c> produce a Query with only the range.</para>
     /// </summary>
     /// <param name="lower">The lower bound (inclusive)</param>
     /// <returns>This builder for chaining</returns>
     public QueryBuilder Range(int lower)
     {
         _rangeSelect = new Angzarr.SequenceRange { Lower = (uint)lower };
+        _temporal = null;
         return this;
     }
 
     /// <summary>
-    /// Query a range of sequences with upper bound (inclusive).
+    /// Query a range of sequences with upper bound (inclusive — audit #27).
     ///
     /// <para>Use for pagination: fetch events 100-200, then 200-300.</para>
+    ///
+    /// <para>Last-selection-wins (audit #23) — see <see cref="Range"/>.</para>
     /// </summary>
     /// <param name="lower">The lower bound (inclusive)</param>
     /// <param name="upper">The upper bound (inclusive)</param>
@@ -120,6 +129,7 @@ public class QueryBuilder
     public QueryBuilder RangeTo(int lower, int upper)
     {
         _rangeSelect = new Angzarr.SequenceRange { Lower = (uint)lower, Upper = (uint)upper };
+        _temporal = null;
         return this;
     }
 
@@ -127,33 +137,44 @@ public class QueryBuilder
     /// Query state as of a specific sequence number.
     ///
     /// <para>Essential for debugging: "What was the state when this bug occurred?"</para>
+    ///
+    /// <para>Last-selection-wins (audit #23) — clears any previously-set range
+    /// selection.</para>
     /// </summary>
     /// <param name="seq">The sequence number</param>
     /// <returns>This builder for chaining</returns>
     public QueryBuilder AsOfSequence(int seq)
     {
         _temporal = new Angzarr.TemporalQuery { AsOfSequence = (uint)seq };
+        _rangeSelect = null;
         return this;
     }
 
     /// <summary>
     /// Query state as of a specific timestamp (RFC3339 format).
     ///
-    /// <para>Example: "2024-01-15T10:30:00Z"</para>
+    /// <para>Example: <c>"2024-01-15T10:30:00Z"</c>.</para>
+    ///
+    /// <para>Audit finding #34 (Option B — raise immediately): a malformed
+    /// <paramref name="rfc3339"/> string raises <see cref="InvalidTimestampError"/>
+    /// synchronously rather than deferring to <see cref="Build"/>. Previously
+    /// the failure was captured into a sticky <c>_error</c> field that survived
+    /// subsequent last-call-wins setters, making
+    /// <c>qb.AsOfTime("bad").AsOfSequence(5).Build()</c> raise the stale parse
+    /// error. Mirrors Rust's <c>as_of_time(...) -&gt; Result&lt;Self&gt;</c>
+    /// signature where the bad call short-circuits at the call site.</para>
+    ///
+    /// <para>Last-selection-wins (audit #23) — clears any previously-set range
+    /// selection.</para>
     /// </summary>
     /// <param name="rfc3339">The timestamp in RFC3339 format</param>
     /// <returns>This builder for chaining</returns>
+    /// <exception cref="InvalidTimestampError">If the timestamp cannot be parsed.</exception>
     public QueryBuilder AsOfTime(string rfc3339)
     {
-        try
-        {
-            var ts = Helpers.ParseTimestamp(rfc3339);
-            _temporal = new Angzarr.TemporalQuery { AsOfTime = ts };
-        }
-        catch (Exception e)
-        {
-            _error = e;
-        }
+        var ts = Helpers.ParseTimestamp(rfc3339);
+        _temporal = new Angzarr.TemporalQuery { AsOfTime = ts };
+        _rangeSelect = null;
         return this;
     }
 
@@ -161,12 +182,8 @@ public class QueryBuilder
     /// Build the Query without executing.
     /// </summary>
     /// <returns>The constructed Query</returns>
-    /// <exception cref="InvalidTimestampError">If timestamp parsing failed</exception>
     public Angzarr.Query Build()
     {
-        if (_error != null)
-            throw _error;
-
         var cover = new Angzarr.Cover { Domain = _domain };
 
         if (!string.IsNullOrEmpty(_correlationId))

@@ -24,6 +24,14 @@
         <PackageReference Include="Google.Protobuf" Version="3.25.1" />
         <PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" />
         <PackageReference Include="Grpc.Net.Client" Version="2.60.0" />
+        <!-- Server-side stack added by Server module port (audit #68/#74/#77/#82/#89). -->
+        <!-- Grpc.Core is the standalone gRPC server (parity with Python's grpcio + Rust's tonic). -->
+        <PackageReference Include="Grpc.Core" Version="2.46.6" />
+        <!-- HealthCheck servicer for the grpc.health.v1.Health surface. -->
+        <PackageReference Include="Grpc.HealthCheck" Version="2.60.0" />
+        <!-- Structured logging hook for server_started / server_shutdown lines. -->
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     </ItemGroup>
 
     <!-- Reference proto project (compiles .proto files from angzarr submodule) -->

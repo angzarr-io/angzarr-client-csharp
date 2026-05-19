@@ -143,7 +143,8 @@ public class ProcessManagerRouter<TState>
 
         var result = new Angzarr.ProcessManagerHandleResponse();
         result.Commands.AddRange(response.Commands);
-        result.ProcessEvents = response.ProcessEvents;
+        if (response.ProcessEvents != null)
+            result.ProcessEvents.Add(response.ProcessEvents);
         return result;
     }
 
@@ -169,6 +170,9 @@ public class ProcessManagerRouter<TState>
 
         var response = handler.OnRejected(notification, state, domain, commandSuffix);
 
-        return new Angzarr.ProcessManagerHandleResponse { ProcessEvents = response.Events };
+        var result = new Angzarr.ProcessManagerHandleResponse();
+        if (response.Events != null)
+            result.ProcessEvents.Add(response.Events);
+        return result;
     }
 }

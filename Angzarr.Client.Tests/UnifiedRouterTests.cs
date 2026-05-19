@@ -463,7 +463,8 @@ public class UnifiedRouterTests
         var response = router.Dispatch(trigger, processState);
 
         response.ProcessEvents.Should().NotBeNull();
-        response.ProcessEvents.Pages.Should().HaveCount(1);
+        response.ProcessEvents.Should().HaveCount(1);
+        response.ProcessEvents[0].Pages.Should().HaveCount(1);
     }
 
     [Fact]

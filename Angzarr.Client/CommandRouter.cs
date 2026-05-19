@@ -56,7 +56,17 @@ public class CommandRouter
         }
 
         var state = _stateBuilder(eventBook);
-        var result = handler.DynamicInvoke(command, state);
+        object? result;
+        try
+        {
+            result = handler.DynamicInvoke(command, state);
+        }
+        catch (System.Reflection.TargetInvocationException tie) when (tie.InnerException != null)
+        {
+            // Unwrap so service-layer `catch (CommandRejectedError)` sees
+            // the real exception (matches OO Dispatch's unwrap path).
+            throw tie.InnerException;
+        }
         return (IMessage)result!;
     }
 
@@ -71,7 +81,14 @@ public class CommandRouter
         if (_rejectionHandlers.TryGetValue(key, out var handler))
         {
             var state = _stateBuilder(eventBook);
-            return handler.DynamicInvoke(notification, state) as IMessage;
+            try
+            {
+                return handler.DynamicInvoke(notification, state) as IMessage;
+            }
+            catch (System.Reflection.TargetInvocationException tie) when (tie.InnerException != null)
+            {
+                throw tie.InnerException;
+            }
         }
 
         return null;

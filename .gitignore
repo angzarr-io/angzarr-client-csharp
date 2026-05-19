@@ -3,7 +3,35 @@ bin/
 obj/
 *.dll
 *.pdb
+*.nupkg
+*.snupkg
+# Visual Studio / Rider / SDK transient state
+.vs/
+TestResults/
+*.suo
+*.user
+# NuGet caches that can land inside the workspace
+packages/
+.nuget-packages/
+
+# Generated proto bindings — regenerated on demand by `just generate-proto`
+# (see project_proto_generation_model). Grpc.Tools emits to
+# Angzarr.Proto/obj/<Configuration>/<TargetFramework>/Protos/ which is
+# already covered by `obj/` above; this catches any legacy or alternative
+# emit locations.
 proto/**/*.cs
+**/Generated/*.cs
+**/Generated/*.Grpc.cs
+
+# Mutation testing
+.mutants-cache/
+StrykerOutput/
+mutants-reports/
+reports/mutation/
+
+# Container caches (just _container_*)
+.container-cache/
+.container-home/
 
 # IDE
 .idea/

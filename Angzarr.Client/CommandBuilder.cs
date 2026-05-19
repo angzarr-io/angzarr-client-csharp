@@ -35,6 +35,7 @@ public class CommandBuilder
     private string? _typeUrl;
     private byte[]? _payload;
     private Angzarr.MergeStrategy _mergeStrategy = Angzarr.MergeStrategy.MergeCommutative;
+    private Angzarr.SyncMode? _syncMode;
     private Exception? _error;
 
     /// <summary>
@@ -51,15 +52,40 @@ public class CommandBuilder
     }
 
     /// <summary>
-    /// Create a command builder for a new aggregate (no root yet).
+    /// Create a command builder for a new aggregate, optionally
+    /// auto-generating the root UUID.
+    ///
+    /// <para>Audit finding #20 / spec HIGH-3.1: aggregate roots are always
+    /// client-assigned across the six polyglot clients. Pass
+    /// <paramref name="autoGenerateRoot"/> = <c>true</c> to materialize a
+    /// fresh UUID v4 here (matching Python's <c>command_new</c>). The prior
+    /// rootless <c>(client, domain)</c> ctor was removed per HIGH-3.1
+    /// because audit #67 forbids server-bound CommandBooks without a
+    /// stamped root.</para>
     /// </summary>
-    /// <param name="client">The command handler client to use</param>
-    /// <param name="domain">The domain</param>
-    public CommandBuilder(CommandHandlerClient client, string domain)
+    /// <param name="client">The command handler client to use.</param>
+    /// <param name="domain">The domain.</param>
+    /// <param name="autoGenerateRoot">If <c>true</c>, materialize a fresh
+    /// UUID v4 as the aggregate root.</param>
+    public CommandBuilder(CommandHandlerClient client, string domain, bool autoGenerateRoot)
     {
+        if (!autoGenerateRoot)
+        {
+            // Spec HIGH-3.1: rootless paths are forbidden. The only legal
+            // shapes are (client, domain, Guid root) or
+            // (client, domain, autoGenerateRoot: true).
+            throw new InvalidArgumentError(
+                "rootless CommandBuilder construction is not permitted (audit #67)",
+                ErrorCodes.CommandPayloadMissing,
+                new Dictionary<string, string>
+                {
+                    [ErrorKeys.Field] = "root",
+                    [ErrorKeys.Domain] = domain,
+                });
+        }
         _client = client;
         _domain = domain;
-        _root = null;
+        _root = Guid.NewGuid();
     }
 
     /// <summary>
@@ -80,13 +106,50 @@ public class CommandBuilder
     /// Set the expected sequence number for optimistic locking.
     ///
     /// <para>Defaults to 0 for new aggregates.</para>
+    ///
+    /// <para>Spec LOW-3.14: negative inputs are rejected at the call site
+    /// with the canonical <see cref="ErrorCodes.CommandSequenceMissing"/>
+    /// code rather than silently casting to a large uint via two's
+    /// complement (e.g. <c>-1</c> → <c>4294967295</c> on the wire).</para>
     /// </summary>
-    /// <param name="seq">The sequence number</param>
+    /// <param name="seq">The sequence number (must be non-negative)</param>
     /// <returns>This builder for chaining</returns>
+    /// <exception cref="InvalidArgumentError">If <paramref name="seq"/> is negative.</exception>
     public CommandBuilder WithSequence(int seq)
     {
+        if (seq < 0)
+            throw new InvalidArgumentError(
+                ErrorMessages.CommandSequenceMissing,
+                ErrorCodes.CommandSequenceMissing,
+                new Dictionary<string, string>
+                {
+                    [ErrorKeys.Field] = "sequence",
+                    [ErrorKeys.Domain] = _domain,
+                    [ErrorKeys.Input] = seq.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                });
         _sequence = (uint)seq;
         _sequenceSet = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Canonical uint overload (spec LOW-3.14). The proto field is
+    /// <c>uint32</c>; this overload removes the signed/unsigned mismatch.
+    /// </summary>
+    public CommandBuilder WithSequence(uint seq)
+    {
+        _sequence = seq;
+        _sequenceSet = true;
+        return this;
+    }
+
+    /// <summary>
+    /// Store the sync mode the builder will use when <see cref="Execute()"/>
+    /// is invoked. Mirrors Rust's <c>with_sync_mode</c>; spec MED-3.3.
+    /// </summary>
+    public CommandBuilder WithSyncMode(Angzarr.SyncMode mode)
+    {
+        _syncMode = mode;
         return this;
     }
 
@@ -133,14 +196,38 @@ public class CommandBuilder
         if (_error != null)
             throw _error;
 
+        // Spec HIGH-3.2: every builder validation error stamps a canonical
+        // SCREAMING_SNAKE code from ErrorCodes plus structured details so
+        // cross-language cucumber/parity assertions can key off the code.
         if (string.IsNullOrEmpty(_typeUrl))
-            throw new InvalidArgumentError("command type_url not set");
+            throw new InvalidArgumentError(
+                ErrorMessages.CommandTypeUrlMissing,
+                ErrorCodes.CommandTypeUrlMissing,
+                new Dictionary<string, string>
+                {
+                    [ErrorKeys.Field] = "type_url",
+                    [ErrorKeys.Domain] = _domain,
+                });
 
         if (_payload == null)
-            throw new InvalidArgumentError("command payload not set");
+            throw new InvalidArgumentError(
+                ErrorMessages.CommandPayloadMissing,
+                ErrorCodes.CommandPayloadMissing,
+                new Dictionary<string, string>
+                {
+                    [ErrorKeys.Field] = "payload",
+                    [ErrorKeys.Domain] = _domain,
+                });
 
         if (!_sequenceSet)
-            throw new InvalidArgumentError("sequence not set (call WithSequence)");
+            throw new InvalidArgumentError(
+                ErrorMessages.CommandSequenceMissing,
+                ErrorCodes.CommandSequenceMissing,
+                new Dictionary<string, string>
+                {
+                    [ErrorKeys.Field] = "sequence",
+                    [ErrorKeys.Domain] = _domain,
+                });
 
         var correlationId = _correlationId;
         if (string.IsNullOrEmpty(correlationId))
@@ -175,6 +262,18 @@ public class CommandBuilder
     public Angzarr.CommandResponse Execute()
     {
         var cmd = Build();
+        if (_syncMode.HasValue)
+            return _client.Handle(cmd, _syncMode.Value);
         return _client.Handle(cmd);
+    }
+
+    /// <summary>
+    /// Build and execute with an explicit sync mode (overrides any value
+    /// stored via <see cref="WithSyncMode"/>).
+    /// </summary>
+    public Angzarr.CommandResponse Execute(Angzarr.SyncMode syncMode)
+    {
+        var cmd = Build();
+        return _client.Handle(cmd, syncMode);
     }
 }

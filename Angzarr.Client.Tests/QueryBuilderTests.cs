@@ -117,14 +117,104 @@ public class QueryBuilderTests
     }
 
     [Fact]
-    public void Build_InvalidTimestamp_ShouldThrowOnBuild()
+    public void AsOfTime_InvalidTimestamp_ShouldThrowSynchronously()
     {
-        // When I build a query with an invalid timestamp
-        var builder = new QueryBuilder(null!, "test", Guid.NewGuid()).AsOfTime("not-a-timestamp");
+        // Audit finding #34 (Option B — raise immediately): a malformed
+        // rfc3339 string raises InvalidTimestampError synchronously rather
+        // than deferring to Build(). Previously the failure was captured
+        // into a sticky _error field that survived subsequent last-call-wins
+        // setters, making `qb.AsOfTime("bad").AsOfSequence(5).Build()` raise
+        // the stale parse error. Mirrors Rust's `as_of_time(...) -> Result<Self>`
+        // where the bad call short-circuits at the call site.
+        var qb = new QueryBuilder(null!, "test", Guid.NewGuid());
 
-        // Then Build should throw
-        var act = () => builder.Build();
-        act.Should().Throw<Exception>();
+        Action act = () => qb.AsOfTime("not-a-timestamp");
+
+        act.Should().Throw<InvalidTimestampError>();
+    }
+
+    [Fact]
+    public void AsOfTime_InvalidTimestampAfterRange_DoesNotPoisonBuilder()
+    {
+        // After a synchronous-throw AsOfTime, the builder's prior range
+        // selection survives and Build() succeeds. Mirrors Python's
+        // sticky-error fix (audit finding #34).
+        var qb = new QueryBuilder(null!, "test", Guid.NewGuid()).Range(7);
+
+        try
+        {
+            qb.AsOfTime("not-a-timestamp");
+        }
+        catch (InvalidTimestampError)
+        {
+            // Expected.
+        }
+
+        // Builder is still usable — the prior range survives.
+        var q = qb.Build();
+        q.Range.Lower.Should().Be(7u);
+    }
+
+    // ---------------------------------------------------------------------
+    // Audit finding #23 — last-selection-wins between Range / AsOfSequence /
+    // AsOfTime. Mirrors Python's QueryBuilder.range/range_to/as_of_sequence/
+    // as_of_time which clear the other slot on each call.
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public void Range_AfterAsOfSequence_ClearsTemporal()
+    {
+        var qb = new QueryBuilder(null!, "test", Guid.NewGuid())
+            .AsOfSequence(10)
+            .Range(5);
+
+        var q = qb.Build();
+
+        q.Range.Should().NotBeNull();
+        q.Range.Lower.Should().Be(5u);
+        q.Temporal.Should().BeNull();
+    }
+
+    [Fact]
+    public void AsOfSequence_AfterRange_ClearsRange()
+    {
+        var qb = new QueryBuilder(null!, "test", Guid.NewGuid())
+            .Range(5)
+            .AsOfSequence(42);
+
+        var q = qb.Build();
+
+        q.Temporal.Should().NotBeNull();
+        q.Temporal.AsOfSequence.Should().Be(42u);
+        q.Range.Should().BeNull();
+    }
+
+    [Fact]
+    public void AsOfTime_AfterRange_ClearsRange()
+    {
+        var qb = new QueryBuilder(null!, "test", Guid.NewGuid())
+            .Range(5)
+            .AsOfTime("2024-01-15T10:30:00Z");
+
+        var q = qb.Build();
+
+        q.Temporal.Should().NotBeNull();
+        q.Range.Should().BeNull();
+    }
+
+    [Fact]
+    public void RangeTo_AfterTemporal_ClearsTemporal()
+    {
+        var qb = new QueryBuilder(null!, "test", Guid.NewGuid())
+            .AsOfTime("2024-01-15T10:30:00Z")
+            .RangeTo(3, 7);
+
+        var q = qb.Build();
+
+        q.Range.Should().NotBeNull();
+        q.Range.Lower.Should().Be(3u);
+        q.Range.Upper.Should().Be(7u); // Inclusive upper bound (audit #27).
+        q.Temporal.Should().BeNull();
     }
 
     [Fact]

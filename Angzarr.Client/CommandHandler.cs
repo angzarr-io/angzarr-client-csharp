@@ -150,9 +150,26 @@ public abstract class CommandHandler<TState>
         {
             if (Helpers.TypeUrlMatches(typeUrl, suffix))
             {
-                var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(cmdType);
+                // Any has multiple Unpack overloads; bind to the
+                // parameterless generic form explicitly to avoid the
+                // AmbiguousMatchException raised by GetMethod("Unpack").
+                var unpackMethod = typeof(Any)
+                    .GetMethods()
+                    .First(m => m.Name == "Unpack" && m.IsGenericMethodDefinition && m.GetParameters().Length == 0)
+                    .MakeGenericMethod(cmdType);
                 var cmd = unpackMethod.Invoke(commandAny, null);
-                var result = method.Invoke(this, new[] { cmd });
+                object? result;
+                try
+                {
+                    result = method.Invoke(this, new[] { cmd });
+                }
+                catch (System.Reflection.TargetInvocationException tie) when (tie.InnerException != null)
+                {
+                    // Unwrap reflection's wrapper so the gRPC service-layer
+                    // catch (CommandRejectedError) clauses receive the
+                    // real exception instead of a TargetInvocationException.
+                    throw tie.InnerException;
+                }
                 HandleResult(result);
                 return;
             }
@@ -285,7 +302,12 @@ public abstract class CommandHandler<TState>
         {
             if (Helpers.TypeUrlMatches(eventAny.TypeUrl, suffix))
             {
-                var unpackMethod = typeof(Any).GetMethod("Unpack")!.MakeGenericMethod(eventType);
+                // Avoid GetMethod("Unpack") which is ambiguous given
+                // the Any class's multiple Unpack overloads.
+                var unpackMethod = typeof(Any)
+                    .GetMethods()
+                    .First(m => m.Name == "Unpack" && m.IsGenericMethodDefinition && m.GetParameters().Length == 0)
+                    .MakeGenericMethod(eventType);
                 var evt = unpackMethod.Invoke(eventAny, null);
                 method.Invoke(this, new[] { state, evt });
                 return;
@@ -307,6 +329,13 @@ public abstract class CommandHandler<TState>
     /// <summary>
     /// Handle a command and return the resulting event.
     /// Convenience method for testing and simple use cases.
+    ///
+    /// <para>Single-event handlers return the recorded event. Handlers that
+    /// emit *multiple* events (e.g. Hand.AwardPot → (PotAwarded, HandComplete)
+    /// per Python's canonical tuple return) return an <see cref="IEnumerable{T}"/>
+    /// of <see cref="IMessage"/>; this helper records every event and returns
+    /// the first as the primary event (matches Python tuple ordering — callers
+    /// inspect <see cref="EventBook"/>() for the trailing events).</para>
     /// </summary>
     public IMessage HandleCommand(IMessage command)
     {
@@ -324,6 +353,20 @@ public abstract class CommandHandler<TState>
                 {
                     ApplyAndRecord(msg);
                     return msg;
+                }
+                if (result is System.Collections.IEnumerable enumerable)
+                {
+                    IMessage? first = null;
+                    foreach (var item in enumerable)
+                    {
+                        if (item is IMessage emitted)
+                        {
+                            ApplyAndRecord(emitted);
+                            first ??= emitted;
+                        }
+                    }
+                    if (first != null)
+                        return first;
                 }
                 throw new InvalidOperationException($"Handler for {suffix} returned null");
             }
