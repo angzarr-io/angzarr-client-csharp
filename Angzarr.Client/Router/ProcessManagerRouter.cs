@@ -143,14 +143,8 @@ public class ProcessManagerRouter<TState>
 
         var result = new Angzarr.ProcessManagerHandleResponse();
         result.Commands.AddRange(response.Commands);
-        // Audit #92: ProcessEvents is now `repeated EventBook` (matching
-        // Python's list and Rust's Vec). Append the single book the
-        // C# handler shape currently produces; broader migration to a
-        // collection-shaped IProcessManagerHandler is a follow-up.
         if (response.ProcessEvents != null)
-        {
             result.ProcessEvents.Add(response.ProcessEvents);
-        }
         return result;
     }
 
@@ -178,9 +172,7 @@ public class ProcessManagerRouter<TState>
 
         var result = new Angzarr.ProcessManagerHandleResponse();
         if (response.Events != null)
-        {
             result.ProcessEvents.Add(response.Events);
-        }
         return result;
     }
 }

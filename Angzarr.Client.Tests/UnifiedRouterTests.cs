@@ -462,7 +462,7 @@ public class UnifiedRouterTests
 
         var response = router.Dispatch(trigger, processState);
 
-        // Audit #92: ProcessEvents is repeated EventBook.
+        response.ProcessEvents.Should().NotBeNull();
         response.ProcessEvents.Should().HaveCount(1);
         response.ProcessEvents[0].Pages.Should().HaveCount(1);
     }

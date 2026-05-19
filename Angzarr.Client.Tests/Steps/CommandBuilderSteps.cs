@@ -28,7 +28,7 @@ public class CommandBuilderSteps
     [When(@"I build a command for domain ""([^""]+)""$")]
     public void WhenBuildCommandForDomain(string domain)
     {
-        _builder = new CommandBuilder(null!, domain);
+        _builder = new CommandBuilder(null!, domain, autoGenerateRoot: true);
     }
 
     [When(@"I build a command for domain ""(.*)"" root ""(.*)""")]
@@ -52,7 +52,7 @@ public class CommandBuilderSteps
     [When(@"I build a command for new aggregate in domain ""(.*)""")]
     public void WhenBuildCommandForNewAggregate(string domain)
     {
-        _builder = new CommandBuilder(null!, domain);
+        _builder = new CommandBuilder(null!, domain, autoGenerateRoot: true);
     }
 
     [When(@"I set the command type to ""(.*)""")]
@@ -118,7 +118,7 @@ public class CommandBuilderSteps
     [When(@"I build a command without specifying merge strategy")]
     public void WhenBuildWithoutMergeStrategy()
     {
-        _builder = new CommandBuilder(null!, "test").WithCommand(
+        _builder = new CommandBuilder(null!, "test", autoGenerateRoot: true).WithCommand(
             "type.googleapis.com/test.TestCommand",
             _testPayload
         );
@@ -133,7 +133,7 @@ public class CommandBuilderSteps
             "COMMUTATIVE" => Angzarr.MergeStrategy.MergeCommutative,
             _ => Angzarr.MergeStrategy.MergeCommutative,
         };
-        _builder = new CommandBuilder(null!, "test")
+        _builder = new CommandBuilder(null!, "test", autoGenerateRoot: true)
             .WithSequence(0)
             .WithMergeStrategy(mergeStrategy)
             .WithCommand("type.googleapis.com/test.TestCommand", _testPayload);
@@ -304,13 +304,13 @@ public class CommandBuilderSteps
     [Given(@"a command builder")]
     public void GivenACommandBuilder()
     {
-        _builder = new CommandBuilder(null!, "test");
+        _builder = new CommandBuilder(null!, "test", autoGenerateRoot: true);
     }
 
     [Given(@"a command builder for domain ""(.*)""")]
     public void GivenACommandBuilderForDomain(string domain)
     {
-        _builder = new CommandBuilder(null!, domain);
+        _builder = new CommandBuilder(null!, domain, autoGenerateRoot: true);
     }
 
     [Given(@"a command builder for domain ""(.*)"" and root ""(.*)""")]
@@ -398,7 +398,7 @@ public class CommandBuilderSteps
     [When(@"I call client\.command_new\(""(.*)""\)")]
     public void WhenICallClientCommandNewDomain(string domain)
     {
-        _builder = new CommandBuilder(null!, domain);
+        _builder = new CommandBuilder(null!, domain, autoGenerateRoot: true);
     }
 
     [When(@"I create two commands with different roots")]
@@ -418,7 +418,7 @@ public class CommandBuilderSteps
     [When(@"I build a command without required fields")]
     public void WhenIBuildACommandWithoutRequiredFields()
     {
-        _builder = new CommandBuilder(null!, "test");
+        _builder = new CommandBuilder(null!, "test", autoGenerateRoot: true);
         // Don't set required fields - simulate validation error
         var error = new InvalidArgumentError("Missing required fields: root, command");
         _ctx["error"] = error;
@@ -427,7 +427,7 @@ public class CommandBuilderSteps
     [When(@"I build and execute a command for domain ""(.*)""")]
     public void WhenIBuildAndExecuteACommandForDomain(string domain)
     {
-        _builder = new CommandBuilder(null!, domain)
+        _builder = new CommandBuilder(null!, domain, autoGenerateRoot: true)
             .WithSequence(0)
             .WithCommand("type.googleapis.com/test.Command", _testPayload);
         _command = _builder.Build();

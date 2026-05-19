@@ -47,13 +47,26 @@ public sealed class QueryClient : IDisposable
     /// <exception cref="ConnectionError">If connection fails</exception>
     public static QueryClient Connect(string endpoint)
     {
+        return Connect(endpoint, ExponentialBackoffRetry.Default());
+    }
+
+    /// <summary>
+    /// Connect with a custom retry policy. Mirrors Python's
+    /// <c>QueryClient.connect(endpoint, retry=...)</c>.
+    /// </summary>
+    public static QueryClient Connect(string endpoint, IRetryPolicy retry)
+    {
         try
         {
-            var channel = GrpcChannel.ForAddress(FormatEndpoint(endpoint));
-            var stub = new Angzarr.EventQueryService.EventQueryServiceClient(channel);
+            GrpcChannel? channel = null;
+            retry.Execute(() =>
+            {
+                channel = GrpcChannel.ForAddress(FormatEndpoint(endpoint));
+            });
+            var stub = new Angzarr.EventQueryService.EventQueryServiceClient(channel!);
             return new QueryClient(channel, stub, true);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not ConnectionError)
         {
             throw new ConnectionError($"Failed to connect to {endpoint}", e);
         }
@@ -160,7 +173,12 @@ public sealed class QueryClient : IDisposable
 
     private static string FormatEndpoint(string endpoint)
     {
-        // Ensure the endpoint has a scheme
+        // Audit finding #39: lenient UDS prefix detection — pass UDS endpoints
+        // through unchanged so callers can wire a custom UnixDomainSocketEndPoint
+        // handler. Otherwise default to http:// scheme for raw host:port.
+        if (Transport.DetectUdsPath(endpoint) != null)
+            return endpoint;
+
         if (!endpoint.StartsWith("http://") && !endpoint.StartsWith("https://"))
         {
             return "http://" + endpoint;

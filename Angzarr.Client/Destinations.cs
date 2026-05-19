@@ -53,8 +53,10 @@ public class Destinations
     /// <summary>
     /// Stamp all command pages with the sequence for the given domain.
     ///
-    /// Throws InvalidOperationException if the domain is not in the sequences map.
-    /// This indicates a configuration error -- the domain should be listed in output_domains.
+    /// <para>Throws <see cref="InvalidArgumentError"/> with code
+    /// <see cref="ErrorCodes.MissingDestinationSequence"/> when the domain
+    /// is not in the sequences map. This indicates a configuration error —
+    /// the domain should be listed in <c>output_domains</c>. Audit #64.</para>
     /// </summary>
     /// <param name="cmd">The command book to stamp.</param>
     /// <param name="domain">The domain whose sequence to use.</param>
@@ -63,12 +65,20 @@ public class Destinations
     {
         if (!_sequences.TryGetValue(domain, out var seq))
             throw new InvalidArgumentError(
-                $"No sequence for domain '{domain}' - check output_domains config"
+                ErrorMessages.MissingDestinationSequence,
+                ErrorCodes.MissingDestinationSequence,
+                new Dictionary<string, string> { [ErrorKeys.Domain] = domain }
             );
 
         foreach (var page in cmd.Pages)
         {
-            page.Header = new Angzarr.PageHeader { Sequence = seq };
+            // Mirror Python: preserve existing header fields, just set sequence.
+            // (Was previously replacing the entire header — caller could lose
+            // an AngzarrDeferred or merge-strategy override they had built.)
+            if (page.Header == null)
+                page.Header = new Angzarr.PageHeader { Sequence = seq };
+            else
+                page.Header.Sequence = seq;
         }
 
         return cmd;
@@ -85,7 +95,37 @@ public class Destinations
     }
 
     /// <summary>
+    /// Alias for <see cref="Has"/> matching the Python/Rust API name.
+    /// Audit #74 — canonicalized cross-language naming.
+    /// </summary>
+    public bool HasDomain(string domain) => Has(domain);
+
+    /// <summary>
     /// Get all domain names that have sequences.
     /// </summary>
     public IReadOnlyCollection<string> Domains => _sequences.Keys;
+
+    /// <summary>
+    /// Build a <see cref="Angzarr.PageHeader"/> carrying an
+    /// <see cref="Angzarr.AngzarrDeferredSequence"/>.
+    ///
+    /// <para>Use this on saga-produced commands so the framework can dedupe on
+    /// <c>(source.root, source_seq, target.root)</c>. AMQP at-least-once
+    /// redelivery of the trigger event then becomes a no-op at the
+    /// destination aggregate's pipeline.</para>
+    ///
+    /// <para>Mirrors Python's <c>Destinations.deferred_header(source_cover, source_seq)</c>
+    /// and Rust's <c>Destinations::deferred_header</c>. Audit #31.</para>
+    /// </summary>
+    public static Angzarr.PageHeader DeferredHeader(Angzarr.Cover sourceCover, uint sourceSeq)
+    {
+        return new Angzarr.PageHeader
+        {
+            AngzarrDeferred = new Angzarr.AngzarrDeferredSequence
+            {
+                Source = sourceCover,
+                SourceSeq = sourceSeq,
+            },
+        };
+    }
 }

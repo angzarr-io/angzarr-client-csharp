@@ -206,13 +206,18 @@ public sealed class CommandHandlerClient : IDisposable
     }
 
     /// <summary>
-    /// Start building a command for a new aggregate (no root yet).
+    /// Start building a command for a new aggregate.
+    ///
+    /// <para>Audit finding #20: materializes a fresh UUID v4 root client-side
+    /// and passes it to the builder. Aggregate roots are always
+    /// client-assigned across all six polyglot clients — no path exists
+    /// where the root field is left unset on a real wire-side request.</para>
     /// </summary>
     /// <param name="domain">The domain</param>
-    /// <returns>A CommandBuilder for fluent construction</returns>
+    /// <returns>A CommandBuilder seeded with a fresh UUID v4 root.</returns>
     public CommandBuilder CommandNew(string domain)
     {
-        return new CommandBuilder(this, domain);
+        return new CommandBuilder(this, domain, autoGenerateRoot: true);
     }
 
     /// <summary>
@@ -228,6 +233,12 @@ public sealed class CommandHandlerClient : IDisposable
 
     private static string FormatEndpoint(string endpoint)
     {
+        // Audit finding #39: lenient UDS prefix detection. Pass UDS endpoints
+        // through unchanged so callers wiring up a custom SocketsHttpHandler
+        // with UnixDomainSocketEndPoint still receive the original path.
+        if (Transport.DetectUdsPath(endpoint) != null)
+            return endpoint;
+
         if (!endpoint.StartsWith("http://") && !endpoint.StartsWith("https://"))
         {
             return "http://" + endpoint;

@@ -9,8 +9,17 @@ ROOT := `git rev-parse --show-toplevel`
 default:
     @just --list
 
-proto:
-    cd Angzarr.Client && dotnet build
+# Proto regen executor. Builds Angzarr.Proto.csproj which triggers the
+# Grpc.Tools MSBuild task to emit *.cs into
+# Angzarr.Proto/obj/<Configuration>/<TargetFramework>/Protos/. See the host
+# justfile's `generate-proto` orchestration for the mtime-guarded entry
+# point. Per project_proto_generation_model the build-tool integration is
+# the EXECUTOR but not the TRIGGER — `just` owns the trigger.
+generate-proto-force:
+    dotnet build Angzarr.Proto/Angzarr.Proto.csproj
+
+# Legacy alias.
+proto: generate-proto-force
 
 build:
     cd Angzarr.Client && dotnet build
