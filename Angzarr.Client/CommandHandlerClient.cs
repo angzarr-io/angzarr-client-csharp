@@ -158,21 +158,6 @@ public sealed class CommandHandlerClient : IDisposable
     }
 
     /// <summary>
-    /// Execute a command synchronously.
-    ///
-    /// <para>Convenience method that delegates to HandleCommand.
-    /// Blocks until the command handler processes the command and events are persisted.
-    /// The response includes the resulting events.</para>
-    /// </summary>
-    /// <param name="command">The command request to execute</param>
-    /// <returns>The command response with resulting events</returns>
-    /// <exception cref="GrpcError">If the gRPC call fails</exception>
-    public Angzarr.CommandResponse HandleSync(Angzarr.CommandRequest command)
-    {
-        return HandleCommand(command);
-    }
-
-    /// <summary>
     /// Execute a command speculatively against temporal state (no persistence).
     ///
     /// <para>Use for form validation, preview, or testing without polluting event store.</para>

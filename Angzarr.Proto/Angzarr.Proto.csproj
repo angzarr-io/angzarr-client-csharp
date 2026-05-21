@@ -14,13 +14,14 @@
 
     <ItemGroup>
         <!--
-          angzarr-project relocated proto files from proto/angzarr/*.proto
-          to proto/angzarr_client/proto/angzarr/*.proto. Generated namespace
-          stays Angzarr.* via the unchanged `csharp_namespace` option, so
-          source code is untouched — only the file glob moves.
+          angzarr-project v1 move: protos now live under
+          proto/angzarr_client/proto/angzarr/v1/. csharp_namespace stays
+          "Angzarr" (option in the .proto files is unchanged), so the
+          generated namespace stays Angzarr.* and source code is
+          untouched — only the file glob moves.
         -->
         <Protobuf
-            Include="../angzarr-project/proto/angzarr_client/proto/angzarr/*.proto"
+            Include="../angzarr-project/proto/angzarr_client/proto/angzarr/v1/*.proto"
             GrpcServices="Both"
             ProtoRoot="../angzarr-project/proto"
         />

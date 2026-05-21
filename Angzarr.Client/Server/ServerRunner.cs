@@ -91,11 +91,11 @@ public static class ServerRunner
 {
     // Fully-qualified gRPC service names — matched against Health.Check
     // and used as health-reporter keys. Match Rust's HEALTH_NAME_*.
-    public const string HealthNameCommandHandler = "angzarr_client.proto.angzarr.CommandHandlerService";
-    public const string HealthNameSaga = "angzarr_client.proto.angzarr.SagaService";
-    public const string HealthNameProcessManager = "angzarr_client.proto.angzarr.ProcessManagerService";
-    public const string HealthNameProjector = "angzarr_client.proto.angzarr.ProjectorService";
-    public const string HealthNameUpcaster = "angzarr_client.proto.angzarr.UpcasterService";
+    public const string HealthNameCommandHandler = "angzarr_client.proto.angzarr.v1.CommandHandlerService";
+    public const string HealthNameSaga = "angzarr_client.proto.angzarr.v1.SagaService";
+    public const string HealthNameProcessManager = "angzarr_client.proto.angzarr.v1.ProcessManagerService";
+    public const string HealthNameProjector = "angzarr_client.proto.angzarr.v1.ProjectorService";
+    public const string HealthNameUpcaster = "angzarr_client.proto.angzarr.v1.UpcasterService";
 
     /// <summary>
     /// Build a fresh <see cref="global::Grpc.Core.Server"/> with the
