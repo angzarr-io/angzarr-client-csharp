@@ -306,3 +306,13 @@ check: fmt
 
 # Cross-language alias — `just lint` placeholder (C# uses fmt-check only).
 lint: fmt
+
+# === Code complexity (lizard, in container) ===
+# Per-function cyclomatic complexity via lizard. .NET has no clean standalone
+# cyclomatic CLI (Roslynator reports only LOC; CodeAnalysis.Metrics is
+# XML-only and per-project), so lizard is the pragmatic best choice; it is
+# baked into the angzarr-csharp image. Defaults to the `Angzarr.Client`
+# source (obj/bin and the generated `Angzarr.Proto` project are excluded).
+# Report-only — never fails the build.
+complexity *ARGS:
+    just _container complexity {{ARGS}}

@@ -48,3 +48,11 @@ pack:
 
 publish:
     cd Angzarr.Client && dotnet nuget push bin/Release/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+
+# Per-function cyclomatic complexity (lizard). Scans the hand-written client
+# library; build output (obj/bin) and the generated Angzarr.Proto project are
+# excluded. Single-quoted globs so the host shell doesn't expand them.
+# Leading `-` keeps this a report — it does NOT fail the build.
+LIZARD_EXCLUDES := "-x '*/obj/*' -x '*/bin/*' -x '*/Angzarr.Proto/*'"
+complexity *ARGS:
+    -lizard -l csharp -C 15 {{LIZARD_EXCLUDES}} {{ if ARGS == "" { "Angzarr.Client" } else { ARGS } }}
