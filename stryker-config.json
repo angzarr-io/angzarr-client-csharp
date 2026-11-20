@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-net/master/src/Stryker.Core/Stryker.Core/stryker-config.schema.json",
+  "stryker-config": {
+    "solution": "Angzarr.sln",
+    "project": "Angzarr.Client",
+    "thresholds": {
+      "high": 30,
+      "low": 20,
+      "break": 15
+    }
+  }
+}

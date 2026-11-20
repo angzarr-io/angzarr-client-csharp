@@ -1,0 +1,8 @@
+version: v2
+inputs:
+  - directory: angzarr-project/proto
+plugins:
+  - remote: buf.build/protocolbuffers/csharp
+    out: proto
+  - remote: buf.build/grpc/csharp
+    out: proto
